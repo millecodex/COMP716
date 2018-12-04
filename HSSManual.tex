@@ -1,0 +1,132 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                      %
+%                   HIGHLY SECURE SYSTEMS - COMP716                    %
+%                  AUCKLAND UNIVERSITY OF TECHNOLOGY                   %
+%                            COURSE MANUAL                             %
+%                         LATEX SOURCE FILES                           %
+%                                                                      %
+% Written by Andrew Ensor, 2008.                                       %
+% Last updated 04 December 2018 by Jeff Nijsse                         %
+%                                                                      %
+% This project is on GitHub, find it and download the source files at: %
+% <https://github.com/millecodex/COMP716/>                             % 
+%                                                                      %
+% Licenced under MIT General License (c) 2018                          %
+%                                                                      % 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% all psTricks drawings are auto-converted 
+% to pdf containers using auto-pst-pdf
+% compile from the command line with
+% >>pdflatex -shell-escape HSSManual.tex
+% see: https://tex.stackexchange.com/questions/8413/how-to-use-pstricks-in-pdflatex
+%
+\documentclass[a4paper]{book}
+\usepackage{pstricks}
+\usepackage{auto-pst-pdf}
+\usepackage{amssymb,graphicx,pst-coil,pst-plot,pst-grad,pst-node,pst-text,%
+  ifthen,clrscode}
+\usepackage{multicol,parskip}
+\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
+
+\begin{document}
+\setlength{\parskip}{1.5mm}
+  \newcommand{\url}[1]{\texttt{#1}\/}
+  \newcommand{\type}[1]{\texttt{#1}\/}
+  \newcommand{\bsl}{\ensuremath{\backslash}}
+  \newcommand{\tag}[1]{\type{<#1>}}
+  \newcommand{\suggestbreak}{\linebreak[0]}
+  \newcommand{\reading}[1]{\textbf{Reading: {#1}}}
+  \newcommand{\defn}[1]{\textit{#1}}
+  %\msg draws a small message using pstricks
+  \newcommand{\msg}{\begin{pspicture}(0,0)(0.5,0.25)
+    \psframe(0,0)(0.5,0.25) \psline(0,0.25)(0.25,0.15)(0.5,0.25) \end{pspicture}}
+  \newcommand{\obj}[1]{\psframebox[framearc=0.25]{\small #1}}
+  \newcommand{\var}[1]{\pscirclebox{\footnotesize #1}}
+  \newcommand{\cls}[1]{\psshadowbox{\small\begin{code}#1\end{code}}}
+  \newsavebox{\saveprog}
+  \newenvironment{program}{\noindent\begin{lrbox}{\saveprog}%
+    \begin{minipage}[b]{11.75cm}\small}
+    {\end{minipage}\end{lrbox}\psshadowbox{\usebox{\saveprog}}}
+  \newcommand{\dbind}{\hspace{1.0em}} % indent used for first lines in programs
+  \newcommand{\trind}{\mbox{}\hspace{1.5em}} % indent used for lines in programs
+  \newcommand{\nudgedown}[1]{\vspace{#1mm}}
+  \newenvironment{code}{\upshape\mdseries\ttfamily}{}
+  \newenvironment{uml}[1]{\begin{code}\begin{tabular}{|l|}
+    \hline\multicolumn{1}{|c|}{\textbf{\textsf{#1}}}\\\hline}%
+    {\\\hline\end{tabular}\end{code}}
+  \newenvironment{absuml}[1]{\begin{code}\begin{tabular}{|l|}
+    \hline\multicolumn{1}{|c|}{\textsl{#1}}\\\hline}%
+    {\\\hline\end{tabular}\end{code}}
+  \newenvironment{intuml}[1]{\begin{code}\begin{tabular}{|l|}
+    \hline\multicolumn{1}{|c|}{\scriptsize{$\ll$interface$\gg$}}\\
+    \multicolumn{1}{|c|}{\textbf{\textsf{#1}}}\\\hline}%
+    {\\\hline\end{tabular}\end{code}}
+  \newenvironment{objuml}[1]{\begin{uml}{\underline{#1}\rule[-2mm]{0mm}{0mm}}}{\end{uml}}
+
+  \newenvironment{theorem}[1]{\vspace{2mm}\noindent\textsc{#1}: }{\vspace{2mm}}
+  \newtheorem{exercise}{Exercise}[chapter]
+  \definecolor{lightred}{rgb}{1,0.5,0.5}
+
+  % modify the clrscode package
+  \renewcommand{\Do}{\textbf{do}\addtocounter{indent}{1}}
+  \renewcommand{\Then}{\textbf{then}\addtocounter{indent}{1}}
+  \renewcommand{\Else}{\kill\addtocounter{indent}{-1}\liprint\textbf{else}\>\>\addtocounter{indent}{1}}
+  \renewcommand{\ElseIf}{\kill\addtocounter{indent}{-1}\liprint\textbf{else if} }
+  \renewcommand{\Until}{\kill\addtocounter{indent}{-1}\liprint\textbf{until}\hspace{1ex}}
+
+ \frontmatter
+ \begin{titlepage}
+ 	\newgeometry{top=1in,bottom=1in,right=1in,left=1in}
+ 	\begin{center}
+ 		
+ 		\includegraphics[width=7cm]{AUTlogo}\\
+ 		{\vspace{2cm}}
+ 		{\Large School of Engineering, Computer, and Mathematical Sciences}
+ 		% ----------------------------------------------------------------
+ 		\vspace{3cm}\\
+ 		{\huge Highly Secure Systems}\\
+ 		% ----------------------------------------------------------------
+ 		\vspace{1cm}
+ 		{\huge COMP716} \\
+ 		\vspace{1cm}
+ 		{\huge 2018 Semester 2} \\
+ 		% ----------------------------------------------------------------
+ 		\vfill
+ 	\end{center}
+ \end{titlepage}
+ 
+ \clearpage\thispagestyle{empty}
+   \vspace*{\fill}
+ Highly Secure Systems - COMP716\\
+ Auckland University Of Technology\\
+ Course Manual\\
+ 
+ This project is on GitHub, find it \\
+ and download the source files at: \\
+ https://github.com/millecodex/COMP716 \\                            
+                                                                      
+ Licenced under MIT General License (c) 2018 \\     
+ 
+ Version 3.0 by Jeff Nijsse, 2018.\\
+ $<$\texttt{jeff.nijsse@aut.ac.nz}$>$\\
+ Version 2.0 by Seth Hall, 2015.\\
+ Version 1.0 by Andrew Ensor, 2008.
+ 
+ 
+    \include{CourseInformation}
+    \include{Timetable}
+    \tableofcontents
+
+  \mainmatter
+%    \include{SymmetricCiphers}
+%    \include{PublicKeyEncryption}
+%    \include{Authentication}
+%    \include{SmartCardSystems}
+%    \include{NetworkSecurity}
+%    \include{SystemSecurity}
+
+  \appendix
+%    \include{ApacheTomcatServer}
+
+\end{document}

@@ -1,0 +1,2147 @@
+% This is the LaTeX file for the chapter:
+%   Symmetric Ciphers
+% for the manual:
+%   Highly Secure Systems
+% Written by Andrew Ensor
+% Last updated 4 December 2018 by Jeff Nijsse
+
+\chapter{Symmetric Ciphers}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Classical Encryption Techniques                                               %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Classical Encryption Techniques}
+
+\reading{pp29-54}
+
+An \defn{encryption} algorithm is an algorithm which takes a message,
+called \defn{plaintext}, and converts it into a coded message, called
+\defn{ciphertext}, that is not readily intelligible without special knowledge.
+For encryption to be useful it must be possible to reverse the algorithm,
+decrypting the ciphertext and obtaining the original plaintext.
+The study of encryption is known as \defn{cryptography}, whereas
+\defn{cryptanalysis} uses techniques to decipher ciphertext
+without being provided with full knowledge of the enciphering details,
+thus \defn{breaking} the code and obtaining the original plaintext.
+
+Encryption algorithms are usually built using combinations of two simple techniques:
+\begin{description}
+  \item[substitution] where elements in the plaintext are replaced (substituted)
+  with other elements,
+  \item[transposition] where elements in the plaintext are rearranged (transposed)
+  with each other.
+\end{description}
+An encryption algorithm makes use of a \defn{key} that helps determine the
+resulting ciphertext, with the aim of making it difficult to decipher ciphertext
+without prior knowledge of the correct key.
+
+One of the earliest and simplest substitution ciphers is known as the
+\defn{Caesar cipher} as it was used by Julius Caesar during military campaigns.
+Each letter of plaintext is replaced by a letter some fixed number of positions
+further down the alphabet, wrapping around beyond the letter \begin{code}z\end{code}
+back to the letter \begin{code}a\end{code}.
+For example, using a key that gives a rotation of three places and denoting
+plaintext in lowercase and ciphertext in uppercase gives:
+\begin{quote}\begin{tabular}{ll}
+  \emph{Plaintext:} & \begin{code}secure and reliable systems\end{code} \\
+  \emph{Ciphertext:}& \begin{code}VHFXUH DQG UHOLDEOH VBVWHPV\end{code}
+\end{tabular}\end{quote}
+where spaces have been included for clarity.
+Decryption is achieved simply by rotating each letter of the ciphertext back three places.
+Note that it is essential for the security of the Caesar cipher that this algorithm
+be unknown to anyone intercepting the ciphertext, as by brute-force the
+ciphertext could then be decrypted by trying all 26 possible cases of a key,
+presuming the original plaintext would be recognizable when found.
+
+A \defn{monoalphabetic substitution cipher} generalizes and improves on the Caesar cipher by
+using substitutions determined by a random permutation of the letters of the alphabet,
+replacing the letter \begin{code}a\end{code} by the first letter in the permutation,
+\begin{code}b\end{code} by the second, and so forth.
+For example, using \begin{code}\emph{qwertyuiopasdfghjklzxcvbnm}\end{code} as the key,
+so that the letter \begin{code}a\end{code} is substituted by \begin{code}Q\end{code}
+and \begin{code}s\end{code} by \begin{code}L\end{code} gives:
+\begin{quote}\begin{tabular}{ll}
+  \emph{Plaintext:} & \begin{code}secure and reliable systems\end{code} \\
+  \emph{Ciphertext:}& \begin{code}LTEXKT QFR KTSOQWST LNLZTDL\end{code}
+\end{tabular}\end{quote}
+(in practice spaces too would be encoded if included as part of
+the plaintext). A brute-force approach would require checking on
+average half of the $26!\approx4\times10^{26}$ possible keys,
+which is totally infeasible. However, like any simple substitution
+cipher this cipher has a fatal flaw in that it preserves much of
+the structure of the plaintext. If the type of information in the
+plaintext is known, such as English text, then a \defn{frequency
+analysis} can be performed on the elements of the ciphertext,
+comparing the frequencies of each ciphertext element with expected
+frequencies for that type of text. For example, if a cryptanalyst
+suspects that \begin{code}LTEXKTQFRKTSOQWSTLNLZTDL\end{code} is
+encoded from English plaintext then the fact that
+\begin{code}T\end{code} occurs the most times in the ciphertext
+suggests that it is probably the ciphertext for the letter
+\begin{code}e\end{code}, and the other frequencies give further
+insight into the key. Provided with a longer ciphertext or
+multiple ciphertexts encrypted with the same key a cryptanalyst
+has no problems in breaking the code.
+If parts of the plaintext are known (for example, many file
+formats such as PDF start with a well-known fixed header),
+known to contains a particular sequence repeated (such as
+\begin{code}"the"\end{code}), or worse still if a cryptanalyst has
+access to a sample of both plaintext and its corresponding
+ciphertext, the code can be easily broken.
+\begin{figure*}[htb]
+\begin{tabular}{|c|r|c|r|c|r|} \hline
+  \multicolumn{6}{|l|}{\textit{Relative Frequency of Letters in English Text}} \\ \hline\hline
+  \textit{Letter} & \textit{Frequency} & \textit{Letter} & \textit{Frequency}
+  & \textit{Letter} & \textit{Frequency} \\ \hline
+  a & 8.167\% &
+  b & 1.492\% &
+  c & 2.782\% \\
+  d & 4.253\% &
+  e & 12.702\% &
+  f & 2.228\% \\
+  g & 2.015\% &
+  h & 6.094\% &
+  i & 6.996\% \\
+  j & 0.153\% &
+  k & 0.772\% &
+  l & 4.025\% \\
+  m & 2.406\% &
+  n & 6.749\% &
+  o & 7.507\% \\
+  p & 1.929\% &
+  q & 0.095\% &
+  r & 5.987\% \\
+  s & 6.327\% &
+  t & 9.056\% &
+  u & 2.758\% \\
+  v & 0.978\% &
+  w & 2.360\% &
+  x & 0.150\% \\
+  y & 1.974\% &
+  z & 0.074\% & & \\ \hline
+\end{tabular}
+\end{figure*}
+
+One attempt to improve on the monoalphabetic substitution cipher is to assign
+multiple ciphertext keys to common letters such as \begin{code}e\end{code} to ensure
+the ciphertext does not contain any particular letters with noticeable frequency.
+However, this is still susceptible to a frequency analysis since certain combinations
+of pairs of letters, called \defn{bigrams}, occur more frequently than others.
+Given a suitably large ciphertext the code could still be successfully broken using
+a frequency analysis of bigrams.
+\begin{figure*}[htb]
+\begin{tabular}{|c|r|c|r|c|r|} \hline
+  \multicolumn{6}{|l|}{\textit{Relative Frequency of Bigrams in English Text}} \\ \hline\hline
+  \textit{Bigram} & \textit{Frequency} & \textit{Bigram} & \textit{Frequency}
+  & \textit{Bigram} & \textit{Frequency} \\ \hline
+  th & 3.883\% &
+  he & 3.681\% &
+  in & 2.284\% \\
+  er & 2.178\% &
+  an & 2.140\% &
+  re & 1.749\% \\
+  nd & 1.572\% &
+  on & 1.418\% &
+  en & 1.383\% \\ \hline
+\end{tabular}
+\end{figure*}
+
+A \defn{Hill cipher} encrypts blocks of $m$ elements at a time using an
+$m\times m$ matrix $K=\left(k_{ij}\right)$ as the key.
+A plaintext message is broken into blocks
+each with $m$ elements (possibly requiring the end of the plaintext to be padded
+so its length is a multiple of $m$), then each block $p_1p_2\dots p_m$ is encoded
+to a block $c_1c_2\dots c_m$ of ciphertext using matrix multiplication modulo $26$:
+\begin{displaymath}
+  \left(\begin{array}{c}
+    c_1 \\ c_2 \\ \vdots \\ c_m
+  \end{array}\right)
+  =
+  \left(\begin{array}{cccc}
+    k_{11} & k_{12} & \cdots & k_{1m} \\
+    k_{21} & k_{22} & \cdots & k_{2m} \\
+    \vdots & \vdots &        & \vdots \\
+    k_{m1} & k_{m2} & \cdots & k_{mm} \\
+  \end{array}\right)
+  \left(\begin{array}{c}
+    p_1 \\ p_2 \\ \vdots \\ p_m
+  \end{array}\right)
+  \mbox{ mod $26$}
+\end{displaymath}
+where each letter is assigned a numerical value, \begin{code}a\end{code} as $0$,
+\begin{code}b\end{code} as $1$, \dots, \begin{code}z\end{code} as $25$, and multiplication
+and addition are performed modulo $26$.
+The matrix $K$ must be invertible (modulo $26$) to ensure that the ciphertext can be reversed
+using the inverse matrix $K^{-1}$.
+
+As an example, the matrix
+$K=\left(\begin{array}{ccc}8&21&21\\5&8&12\\10&21&8\end{array}\right)$ can be used to
+encrypt the plaintext \begin{code}secureandreliablesystems\end{code} three characters
+at a time, where the first block \begin{code}sec\end{code} would be encoded by:
+\begin{displaymath}
+  \left(\begin{array}{ccc}8&21&21\\5&8&12\\10&21&8\end{array}\right)
+  \left(\begin{array}{c}18\\4\\2\end{array}\right)
+  \mbox{ mod $26$} =
+  \left(\begin{array}{c}10\\16\\20\end{array}\right)
+\end{displaymath}
+corresponding to the ciphertext \begin{code}KQU\end{code}.
+The entire plaintext would be encoded as \begin{code}KQU DYR YKL JPE HAK ERA HYQ MUU\end{code}.
+As a $3\times3$ matrix has been used it is not susceptible to a frequency analysis
+of bigrams, and the larger the size of matrix the more of the structure of the plaintext
+that is hidden. However, the Hill cipher is particularly vulnerable to a
+\defn{plaintext attack}, where some plaintext and its corresponding ciphertext are
+known. Possibly with just as few as $m$ blocks of plaintext and its ciphertext the
+entries in the matrix $K$ could be determined by solving a system of $m$ linear equations,
+and so too the inverse matrix $K^{-1}$ found for decryption.
+
+The \defn{Vigen\`ere cipher} was originally
+described in 1553 and is an example of a \defn{polyalphabetic substitution cipher},
+where there are several monoalphabetic substitution ciphers available and the one chosen
+for each element of plaintext depends on the key.
+The Vigen\`ere cipher simply uses the 26 possible Caesar ciphers and cycles through
+the letters of a key to determine which rotation to use for each element.
+For example, encrypting \begin{code}secureandreliablesystems\end{code}
+using the key \begin{code}\emph{emily}\end{code} gives:
+\begin{quote}\begin{tabular}{ll}
+  \emph{Key:}       & \begin{code}\emph{emilye mil yemilyem ilyemil}\end{code} \\
+  \emph{Plaintext:} & \begin{code}secure and reliable systems\end{code} \\
+  \emph{Ciphertext:}& \begin{code}WQKFPI MVO PIXQLZPQ AJQXQUD\end{code}
+\end{tabular}\end{quote}
+Note that one strength of the Vigen\`ere cipher is that a frequent letter
+such as \begin{code}e\end{code} gets encoded to different ciphertext elements
+depending on its position in the plaintext.
+The first successful cryptanalyst attack on the Vigen\`ere cipher
+was made in 1854 by Charles Babbage, but is known as the \defn{Kasiski examination}.
+It works by first attempting to determine the length $m$ of the key.
+Since occurrences of common words such as \begin{code}"the"\end{code} have a $\frac{1}{m}$
+chance of being encrypted using the same key letters,
+if the plaintext is many times longer than the key then repeated patterns will
+result in the ciphertext
+(such as the repeated pattern \begin{code}PI\end{code} in the above ciphertext example).
+These repeated patterns would occur at multiples of the key length, allowing
+guesses at the probable value of $m$. Once $m$ is determined the Vigen\`ere cipher
+is quickly broken as the ciphertext is next split into $m$ sections, one per letter
+of the key and up to $26$ brute-force attacks or a frequency analysis used to break
+each of the $m$ separate Caesar ciphers.
+
+The \defn{one-time pad} is a modification of the Vigen\`ere cipher where a random key
+is used that is at least as long as the message to be transmitted, and then the key
+gets discarded. Although this can be shown to give a theoretically secure cipher,
+for most applications it is not practical to first distribute a secret key for
+each individual message.
+
+Instead, \defn{rotor machines} such as the famous German \defn{Enigma machine}
+provided a practical implementation of a polyalphabetic substitution cipher that
+were widely used during the period 1930-1950 for encryption.
+A rotor machine is an electro-mechanical device consisting of a series of rotors,
+each which has connections hard-wired to perform a simple monoalphabetic substitution.
+After each element is encoded the rotor advances one position and changes the substitution.
+Using just a single rotor would result in a key of length $26$, so in order to confuse
+attempts at cryptanalysis the output from one rotor would be used as input to another
+which would rotate at a different rate. In practice, at least three rotors were used
+ensuring that there is no repetition in the pattern for $26^3=17576$ letters.
+However, there were successful cryptanalysis attacks during the period 1932-1945
+on all but the most complex rotor machines,
+particularly by the Polish and British using algebraic techniques.
+
+Transposition techniques rely on permuting the order of elements in the plaintext.
+For instance, a \defn{rail fence cipher} writes plaintext elements row by row
+using say six columns then reads the elements column by column:
+\begin{quote}
+  \begin{code}secure\end{code} \\
+  \begin{code}andrel\end{code} \\
+  \begin{code}iables\end{code} \\
+  \begin{code}ystems\end{code} \\
+  \emph{Ciphertext:} \begin{code}SAIYENASCBDTURLEREEMELSS\end{code}
+\end{quote}
+This can be later decoded by writing the ciphertext column by column and reading off row by row.
+This algorithm could be improved by using a key that is a permutation of
+$(1,2,3,4,5,6)$ to rearrange the columns before the ciphertext is read off:\nudgedown{1}
+
+\noindent
+\begin{minipage}{32mm}
+\begin{quote}
+  \begin{code}secure\end{code} \\
+  \begin{code}andrel\end{code} \\
+  \begin{code}iables\end{code} \\
+  \begin{code}ystems\end{code} \\
+\end{quote}
+\end{minipage}
+\hfill \shortstack{permute\\ $(3,1,4,5,2,6)$\\ $\Longrightarrow$} \hfill
+\begin{minipage}{83mm}
+\begin{quote}
+  \begin{code}csuree\end{code} \\
+  \begin{code}darenl\end{code} \\
+  \begin{code}bileas\end{code} \\
+  \begin{code}tyemss\end{code} \\
+ \emph{Ciphertext:} \begin{code}CDBTSAIYURLEREEMENASELSS\end{code}
+\end{quote}
+\end{minipage}
+
+\noindent
+If the frequency of ciphertext elements were found to be similar to the expected frequencies
+in plaintext then a pure transposition cipher would be suspected by a cryptanalyst.
+If only a single transposition were used then it could be broken by
+guessing the number $m$ of columns and testing their various $m!$ permutations.
+The encryption can however be made much harder to break by repeating the process
+multiple times using the same or several keys.
+
+
+\begin{exercise}[Steganography]
+Rather than making a message unintelligible \defn{steganography} instead
+tries to hide plaintext embedded inside an innocuous message.
+Prepare a program that can embed or extract a text message in an image by
+using the least-significant bit of the alpha (transparency) values for the image
+to store the plaintext bit by bit.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Data Encryption Standard                                                      %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Data Encryption Standard}\label{Se:DataEncryptionStandard}
+
+\reading{pp63-89, 181-187}
+
+Contrary to some classical encryption techniques, usually no attempt is made to
+keep modern cryptography algorithms secret, most are widely known and so
+well tested for their security against known cryptanalysis attacks.
+If the encryption and decryption processes both use the same key then the
+encryption is known as \defn{symmetric} or \defn{single-key} encryption.
+If instead the encryption and decryption use different keys then the
+encryption is known as \defn{asymmetric} or \defn{public-key} encryption.
+Examples of symmetric ciphers include DES
+(discussed in this section),
+AES (Section \ref{Se:AdvancedEncryptionStandard}),
+as well as triple DES and RC4 (Section \ref{Se:OtherSymmetricCiphers}),
+whereas RSA (Section \ref{Se:RSAAlgorithm}) and
+ECC (Section \ref{Se:EllipticCurveCryptography}) are both public-key ciphers.
+Encryption algorithms are also classified either as \defn{block ciphers}
+if they process plaintext an entire block at a time, or else as \defn{stream ciphers}
+if they can process plaintext one element at a time as the plaintext is read.
+For example, DES is a block cipher that typically processes 64-bit blocks of plaintext
+at a time, AES is another block cipher designed for 128-bit blocks, whereas
+RC4 is a stream cipher that processes the plaintext one byte at a time.
+
+The \defn{Data Encryption Standard} (DES) is the most widely-used symmetric cipher,
+although it is planned to eventually be replaced by more modern algorithms
+such as AES and triple-DES, which are presumed to be more resistant to cryptographic attacks.
+DES operates on 64-bit (8 byte) blocks of plaintext $p_1p_2p_3\dots p_{63}p_{64}$ at a time
+to produce 64-bit $c_1c_2c_3\dots c_{63}c_{64}$ ciphertext.
+The ciphertext is formed using a 64-bit key (of which only 56 bits are actually utilized).
+Firstly, the plaintext bits are permuted using a standard \defn{initial permutation}
+giving bits $p_{58}p_{50}p_{42}\dots p_{15}p_7$, which is then split into two
+32-bit halves $L_0$ and $R_0$.
+These two halves then pass through 16 rounds of substitutions and transpositions
+to progressively give $L_1$, $R_1$, then $L_2$, $R_2$, etc until $L_{16}$, $R_{16}$ are obtained.
+At the start of each round the key is used to obtain a \defn{subkey} $K_i$ of 48 bits,
+by using various rotations and permutations of the bits of the key, and $L_i$, $R_i$
+are given by the recurrence:
+\begin{eqnarray*}
+  L_i &=& R_{i-1} \\
+  R_i &=& L_{i-1}\oplus F\left(R_{i-1},K_i\right)
+\end{eqnarray*}
+where $\oplus$ denotes the exclusive-OR (XOR) bitwise operation
+(with $0\oplus0=0=1\oplus1$ and $0\oplus1=1=1\oplus0$) and
+$F$ is a specific function for DES.
+Once $L_{16}$, $R_{16}$ are obtained their order is swapped before they are
+combined back together to give 64 bits and the inverse
+of the initial permutation applied to finally give $c_1c_2c_3\dots c_{63}c_{64}$.
+
+\begin{center}
+\begin{pspicture}(-4.5,-1.5)(4.5,12)
+  \rput(2,12.25){\rnode{DESin}{$p_1p_2p_3\dots p_{63}p_{64}$}}
+  \rput(2,11.25){\rnode{IP}{\psframebox{\makebox[48mm]{Initial Permutation}}}}
+  \ncline[arrows=->]{DESin}{IP}\naput{\scriptsize{64 bit}}
+  \pnode(1,11){L0S} \pnode(3,11){R0S}
+  \pnode(1,10){L0E} \pnode(3,10){R0E}
+  \ncline{L0S}{L0E}\nbput{$L_0$} \ncline{R0S}{R0E}\naput{$R_0$}
+
+  \rput(3,9){\rnode{F1}{\psframebox{F}}} \rput(4.25,9){\rnode{K1}{$K_1$}}
+  \pnode(1,8){L1S} \rput(3,8){\rnode{R1S}{$\bigoplus$}}
+  \pnode(1,7){L1E} \pnode(3,7){R1E}
+  \ncline[arrows=->]{L0E}{R1S} \ncline{R0E}{L1S}
+  \ncline[arrows=->]{R0E}{F1} \ncline[arrows=->]{K1}{F1}
+  \ncline[arrows=->]{F1}{R1S}
+  \ncline{L1S}{L1E}\nbput{$L_1$} \ncline{R1S}{R1E}\naput{$R_1$}
+
+  \rput(3,6){\rnode{F2}{\psframebox{F}}} \rput(4.25,6){\rnode{K2}{$K_2$}}
+  \pnode(1,5){L2S} \rput(3,5){\rnode{R2S}{$\bigoplus$}}
+  \pnode(1,4){L2E} \pnode(3,4){R2E}
+  \ncline[arrows=->]{L1E}{R2S} \ncline{R1E}{L2S}
+  \ncline[arrows=->]{R1E}{F2} \ncline[arrows=->]{K2}{F2}
+  \ncline[arrows=->]{F2}{R2S}
+  \ncline[arrows=->]{L2S}{L2E}\nbput{$L_2$} \ncline[arrows=->]{R2S}{R2E}\naput{$R_2$}
+
+  \rput(1,3.5){\vdots} \rput(3,3.5){\vdots}
+
+  \pnode(1,3){L16S} \pnode(3,3){R16S}
+  \pnode(1,2){L16E} \pnode(3,2){R16E}
+  \ncline{L16S}{L16E}\nbput{$L_{16}$} \ncline{R16S}{R16E}\naput{$R_{16}$}
+
+  \pnode(1,1){Lend} \pnode(3,1){Rend}
+  \ncline[arrows=->]{L16E}{Rend} \ncline[arrows=->]{R16E}{Lend}
+
+  \rput(2,0.75){\rnode{IIP}{\psframebox{\makebox[48mm]{Inverse of Initial Permutation}}}}
+  \rput(2,-0.25){\rnode{DESout}{$c_1c_2c_3\dots c_{63}c_{64}$}}
+  \ncline[arrows=->]{IIP}{DESout}\naput{\scriptsize{64 bit}}
+
+  \rput(2,-1){DES Encryption Algorithm}
+\end{pspicture}
+\end{center}
+
+Since the initial permutation and its inverse are well-known they do not really
+contribute to the security of the algorithm, but the 16 rounds help diffuse
+any statistical structure that might be in the plaintext across the entire block
+and tries to confuse attempts at cryptanalysis.
+
+In each round the function $F$ has as input a 32-bit
+$R_{i-1}=r_1r_2r_3\dots r_{31}r_{32}$
+partially encrypted half of the block and a 48-bit subkey $K_i$.
+First it expands $R_{i-1}$ by duplicating some bits to give a 48-bit
+$E\left(R_{i-1}\right)=r_{32}r_1r_2r_3\dots r_{31}r_{32}r_1$.
+This is then passed through a bitwise XOR with the subkey
+to give a 48-bit result.
+Next, the function $F$ treats the 48 bits as eight groups of six bits,
+and for each group uses a special \defn{S-box} to replace the six bits
+by four bits, effectively reducing the previous 48 bits to eight groups of four bits,
+or a 32-bit result.
+For example, if $000000$ is in the first group it is replaced with $1110$ from
+the S-box $S_1$, whereas if it is in the second group it is replaced
+with $1111$ from the S-box $S_2$.
+Finally, these 32 bits are passed through a permutation $P$
+to give $F\left(R_{i-1},K_i\right)$.
+\setlength{\columnsep}{1cm}
+
+\begin{multicols}{2}
+\noindent Although the eight S-boxes are well-known they have been a source of contention
+amongst cryptographers as their original design criteria were kept confidential.
+Hence suspicions arose as to whether they were designed with a weakness so that the
+US National Security Agency could decipher messages without knowledge of the key.
+Also of concern was the length of the key, only 56 bits, instead of the
+original IBM proposal of using a more-secure 128-bit key. Although this still allows $2^{56}\approx7\times10^{16}$ possible keys, by 1998 DES-cracker devices were available that could break DES ciphertext via brute-force in less than three days, and by 2012 the keyspace could be exhausted in 26 hours with custom-built hardware. \\
+
+\begin{pspicture}[shift=*](0.5,-0.75)(5.5,5)
+  \psline(0.5,0)(0.5,4.75)(4.5,4.75)(4.5,0)(0.5,0)
+
+  \rput(2.5,5.5){\rnode{Fin}{$R_{i-1}$}}
+
+  \pnode(2.5,4.25){Ein}
+  \ncline[arrows=->]{Fin}{Ein}\naput[npos=0.8]{\scriptsize{32 bit}}
+  \rput(2.5,4){\rnode{S}{Expansion $E$}}
+  \psline(1.5,4.25)(1,3.75)(4,3.75)(3.5,4.25)(1.5,4.25)
+  \pnode(2.5,3.75){Eout}
+
+  \rput(2.5,3){\rnode{XOR}{$\bigoplus$}}
+  \ncline[arrows=->]{Eout}{XOR}\naput{\scriptsize{48 bit}}
+  \rput(5,3){\rnode{K}{$K_i$}}
+  \ncline[arrows=->]{K}{XOR}\nbput{\scriptsize{48 bit}}
+
+  \rput(1.1,2){\rnode{S1}{\rule[-1.5mm]{0mm}{5mm}$S_1$}} % note: rule is strut
+  \nccurve[angleA=270,angleB=90,arrows=->]{XOR}{S1}
+  \rput(1.6,2.7){\scriptsize{6 bit}}
+  \psline(0.9,1.75)(0.7,2.25)(1.5,2.25)(1.3,1.75)(0.9,1.75)
+  \rput(2.1,2){\rnode{S2}{\rule[-1.5mm]{0mm}{5mm}$S_2$}}
+  \nccurve[angleA=270,angleB=90,arrows=->]{XOR}{S2}
+  \psline(1.9,1.75)(1.7,2.25)(2.5,2.25)(2.3,1.75)(1.9,1.75)
+  \rput(3,2){\dots}
+  \rput(3.9,2){\rnode{S8}{\rule[-1.5mm]{0mm}{5mm}$S_8$}}
+  \nccurve[angleA=270,angleB=90,arrows=->]{XOR}{S8}
+  \rput(3.4,2.7){\scriptsize{6 bit}}
+  \psline(3.7,1.75)(3.5,2.25)(4.3,2.25)(4.1,1.75)(3.7,1.75)
+
+  \pnode(2.5,1){Pin}
+  \nccurve[angleA=270,angleB=90,arrows=->]{S1}{Pin}
+  \rput(1.6,1.25){\scriptsize{4 bit}}
+  \nccurve[angleA=270,angleB=90,arrows=->]{S2}{Pin}
+  \nccurve[angleA=270,angleB=90,arrows=->]{S8}{Pin}
+  \rput(3.4,1.25){\scriptsize{4 bit}}
+  \rput(2.5,0.75){\rnode{P}{\psframebox{\makebox[25mm]{Permutation $P$}}}}
+  \pnode(2.5,0.5){Pout}
+  \rput(2.5,-0.75){\rnode{Fout}{$F\!\left(R_{i-1},K_i\right)$}}
+  \ncline[arrows=->]{Pout}{Fout}\naput[npos=0.2]{\scriptsize{32 bit}}
+\end{pspicture}
+\end{multicols}
+
+As DES is a symmetric cipher the same key is used to decrypt ciphertext
+as well as encrypt plaintext. Decryption is achieved by simply reversing
+the steps of the encryption, applying the subkeys in the reverse order
+and recalculating the $F\left(R_{i-1},K_i\right)$.
+Hence if DES is implemented in hardware, the same hardware can be used
+for encryption as for decryption.
+
+Any block cipher such as DES can be used with plaintext so long as
+its length is an exact multiple of the block size. The simplest
+way of encrypting multiple blocks of plaintext is known as
+\defn{electronic code book} (ECB) mode, which simply encrypts each
+block separately (using the same key for the encryption of each
+block):
+
+\noindent
+\begin{center}
+\begin{pspicture}(0,-0.25)(11.5,2.5)
+  \psline(2,2)(2,2.5)(10,2.5)(10,2)(2,2)
+  \psline[linestyle=dotted](4,2)(4,2.5)
+  \psline[linestyle=dotted](6,2)(6,2.5)
+  \psline[linestyle=dotted](8,2)(8,2.5)
+  \psline[linestyle=dotted](10,2)(10,2.5)
+  \rput(3,2.25){\rnode{P1}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(5,2.25){\rnode{P2}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(7,2.25){\rnode{P3}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(9,2.25){\rnode{P4}{\rule[-1.5mm]{0mm}{5mm}block}}
+
+  \rput(3,1.25){\rnode{E1}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(5,1.25){\rnode{E2}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(7,1.25){\rnode{E3}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(9,1.25){\rnode{E4}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+
+  \psline(2,0)(2,0.5)(10,0.5)(10,0)(2,0)
+  \psline[linestyle=dotted](4,0)(4,0.5)
+  \psline[linestyle=dotted](6,0)(6,0.5)
+  \psline[linestyle=dotted](8,0)(8,0.5)
+  \psline[linestyle=dotted](10,0)(10,0.5)
+  \rput(3,0.25){\rnode{C1}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(5,0.25){\rnode{C2}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(7,0.25){\rnode{C3}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(9,0.25){\rnode{C4}{\rule[-1.5mm]{0mm}{5mm}block}}
+
+  \psset{arrows=->}
+  \ncline{P1}{E1}\ncline{E1}{C1}
+  \ncline{P2}{E2}\ncline{E2}{C2}
+  \ncline{P3}{E3}\ncline{E3}{C3}
+  \ncline{P4}{E4}\ncline{E4}{C4}
+\end{pspicture}
+\end{center}
+However, this has the disadvantage that identical
+plaintext blocks are encrypted as identical ciphertext blocks, which could
+reveal some patterns in the plaintext, particularly for longer plaintext.
+To remove this vulnerability, the \defn{cipher block chaining} (CBC) mode
+takes a bitwise XOR of each plaintext block with the previous block's
+ciphertext before the plaintext block gets encrypted.
+An \defn{initialization vector} of length one block is chosen and used for the bitwise
+XOR with the first block of plaintext. For added security the initialization
+vector should only be known to the sender and intended receiver (and might
+initially be sent to the receiver using ECB mode).
+
+\noindent
+\begin{center}\begin{pspicture}(0,-0.25)(11.5,4)
+  \psline(2,3.5)(2,4)(10,4)(10,3.5)(2,3.5)
+  \psline[linestyle=dotted](4,3.5)(4,4)
+  \psline[linestyle=dotted](6,3.5)(6,4)
+  \psline[linestyle=dotted](8,3.5)(8,4)
+  \psline[linestyle=dotted](10,3.5)(10,4)
+  \rput(3,3.75){\rnode{P1}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(5,3.75){\rnode{P2}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(7,3.75){\rnode{P3}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(9,3.75){\rnode{P4}{\rule[-1.5mm]{0mm}{5mm}block}}
+
+  \rput(1,2.75){\rnode{IV}{\scriptsize{\begin{tabular}{c}initialization\\vector\end{tabular}}}}
+  \rput(3,2.75){\rnode{X1}{$\bigoplus$}}
+  \rput(5,2.75){\rnode{X2}{$\bigoplus$}}
+  \rput(7,2.75){\rnode{X3}{$\bigoplus$}}
+  \rput(9,2.75){\rnode{X4}{$\bigoplus$}}
+
+  \rput(3,1.75){\rnode{E1}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(5,1.75){\rnode{E2}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(7,1.75){\rnode{E3}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(9,1.75){\rnode{E4}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+
+  \pnode(3,1){B1}
+  \pnode(5,1){B2}
+  \pnode(7,1){B3}
+
+  \psline(2,0)(2,0.5)(10,0.5)(10,0)(2,0)
+  \psline[linestyle=dotted](4,0)(4,0.5)
+  \psline[linestyle=dotted](6,0)(6,0.5)
+  \psline[linestyle=dotted](8,0)(8,0.5)
+  \psline[linestyle=dotted](10,0)(10,0.5)
+  \rput(3,0.25){\rnode{C1}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(5,0.25){\rnode{C2}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(7,0.25){\rnode{C3}{\rule[-1.5mm]{0mm}{5mm}block}}
+  \rput(9,0.25){\rnode{C4}{\rule[-1.5mm]{0mm}{5mm}block}}
+
+  \psset{arrows=->}
+  \ncline{IV}{X1}
+  \ncline{P1}{X1}\ncline{X1}{E1}\ncline{E1}{C1}\ncangle[angleA=0,angleB=180,arm=8mm]{B1}{X2}
+  \ncline{P2}{X2}\ncline{X2}{E2}\ncline{E2}{C2}\ncangle[angleA=0,angleB=180,arm=8mm]{B2}{X3}
+  \ncline{P3}{X3}\ncline{X3}{E3}\ncline{E3}{C3}\ncangle[angleA=0,angleB=180,arm=8mm]{B3}{X4}
+  \ncline{P4}{X4}\ncline{X4}{E4}\ncline{E4}{C4}
+\end{pspicture}\end{center}
+
+\noindent
+As the input for the encryption of each successive plaintext block is modified depending
+on the result of the previous encryption
+CBC ensures that identical plaintext blocks probably get encrypted to
+distinct ciphertext blocks.
+
+The \defn{cipher feedback} (CFB) and the \defn{output feedback}
+(OFB) modes can each be used to convert a block cipher such as DES so
+that it can be used as a stream cipher that processes $s$ bits at a time.
+Both these modes start with an initialization vector of length one block,
+encrypt it and select the $s$ most-significant bits of the output.
+These $s$ bits are passed through a bitwise XOR with the first $s$ bits
+of the plaintext stream to produce the first $s$-bit ciphertext. Then the
+bits in the initialization vector are shifted left by $s$ bits.
+With CFB the $s$-bit ciphertext output is used as the new least significant bits
+of the modified vector, whereas with OFB the $s$ most-significant bits of the
+encryption output are instead used (before they get passed to the XOR with the plaintext
+rather than after).
+Then the process is repeated using the modified vector to
+produce $s$-bit ciphertext for the next $s$ bits of plaintext.
+Interestingly, decryption via CFB or OFB mode does not need to reverse the
+encryption algorithm, as it can just use the same process as for encryption to obtain the
+required $s$-bit outputs.
+One potential disadvantage of CFB is that any errors during transmission
+get propagated through the rest of the decryption process as each $s$-bit
+ciphertext received gets used in the following decryptions.
+Instead, with OFB a transmission error
+of one $s$-bit ciphertext affects only its corresponding $s$-bit plaintext,
+not any further plaintext, making it suitable for security over unreliable
+communication channels.
+
+If the length of plaintext is not an exact multiple of the block size
+for a block cipher then \defn{padding} needs to be added
+to fill out the remainder of the final block, which is removed when the
+ciphertext is later decrypted.
+Several padding schemes exist, such as simply appending zero bytes,
+or instead the more complicated and popular padding scheme \defn{PKCS\#7}
+which appends repeatedly with the number of bytes of padding
+and helps complicate an attack that might try to
+take advantage of the last block of ciphertext.
+
+The \defn{Java Cryptography Architecture} (JCA) is included as part of Java Standard
+Edition and include API in the packages \begin{code}java.security\end{code},
+\begin{code}javax.crypto\end{code} and their subpackages
+that support encryption, decryption, and key generation.
+They allow for pluggable cryptographic security \defn{providers} which provide
+implementations of various cryptographic algorithms, and include
+a default provider called \begin{code}SunJCE\end{code}.
+The following steps are used for a symmetric block cipher:
+\begin{description}
+  \item[Generate Key]
+  A key for symmetric encryption can be randomly generated by creating a suitable
+  \begin{code}KeyGenerator\end{code} for the encryption algorithm
+  and using its \begin{code}generateKey\end{code} method:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyGenerator kg = KeyGenerator.getInstance("DES");
+SecretKey key = kg.generateKey();
+\end{verbatim}\end{code}\end{quote}
+
+  \item[Create Cipher]
+  For either encryption or decryption a \begin{code}Cipher\end{code} object must
+  first be created, specifying the name of the algorithm, and optionally
+  its mode for handling multiple blocks and how it applies padding, such as:
+\begin{quote}\begin{code}\begin{verbatim}
+Cipher cipher=Cipher.getInstance("DES/ECB/PKCS5Padding");
+\end{verbatim}\end{code}\end{quote}
+  JCA supports modes \begin{code}ECB\end{code} for electronic code book,
+  \begin{code}CBC\end{code} for cipher block chaining,
+  \begin{code}CFB\end{code} for cipher feedback,
+  \begin{code}OFB\end{code} for output feedback,
+  as well as \begin{code}PCBC\end{code} for propagating cipher block chaining,
+  and includes \begin{code}PKCS5Padding\end{code} and
+  \begin{code}NoPadding\end{code} for padding.
+
+  \item[Initialize Cipher]
+  The cipher is then initialized either for encryption:
+\begin{quote}\begin{code}\begin{verbatim}
+cipher.init(Cipher.ENCRYPT_MODE, key);
+\end{verbatim}\end{code}\end{quote}
+  or else for decryption:
+\begin{quote}\begin{code}\begin{verbatim}
+cipher.init(Cipher.DECRYPT_MODE, key);
+\end{verbatim}\end{code}\end{quote}
+
+  \item[Encrypt or Decrypt]
+  The \begin{code}Cipher\end{code} method \begin{code}doFinal\end{code}
+  is used to encrypt or decrypt a \begin{code}byte[]\end{code} array:
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] input = ...;
+byte[] output = cipher.doFinal(input);
+\end{verbatim}\end{code}\end{quote}
+\end{description}
+
+For example, the simple class \begin{code}DESExample\end{code} demonstrates
+how DES encryption can be achieved using the JCA API.
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A simple class that demonstrates how DES encryption is achieved
+   using the Java Cryptography Architecture
+   @author Andrew Ensor
+*/
+...
+public class DESExample
+{
+   public static void main(String[] args)
+   {  try
+      {  // generate a secret key for DES
+         KeyGenerator kg = KeyGenerator.getInstance("DES");
+         SecretKey key = kg.generateKey();
+         // create a cipher
+         Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+         // obtain the plaintext
+         Scanner keyboardInput = new Scanner(System.in);
+         System.out.print("Please enter some plaintext:");
+         byte[] plaintext = keyboardInput.nextLine().getBytes();
+         // initialize cipher for encryption
+         cipher.init(Cipher.ENCRYPT_MODE, key);
+         // encrypt the plaintext
+         byte[] ciphertext = cipher.doFinal(plaintext);
+         System.out.print("Ciphertext is:");
+         for (int i=0; i<ciphertext.length; i++)
+         {  int unsignedByte = ciphertext[i] & 0xFF;
+            System.out.print(Integer.toHexString(unsignedByte)+" ");
+         }
+         System.out.println();
+         // decrypt the ciphertext
+         cipher.init(Cipher.DECRYPT_MODE, key);
+         byte[] deciphertext = cipher.doFinal(ciphertext);
+         System.out.println("Deciphered is:"+new String(deciphertext));
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+      catch (NoSuchPaddingException e)
+      {  System.err.println("Padding scheme not available: "+e);
+      }
+      catch (InvalidKeyException e)
+      {  System.err.println("Invalid key: "+e);
+      }
+      catch (IllegalBlockSizeException e)
+      {  System.err.println("Cannot pad plaintext: "+e);
+      }
+      catch (BadPaddingException e)
+      {  System.err.println("Exception with padding: "+e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\begin{exercise}[Comparing ECB and CBC modes]
+Use DES in ECB mode and then instead in CBC mode to encrypt the bytes in an image
+and display the plaintext image as well as both ciphertext images.
+Test with an image that has a uniform background.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Finite Fields                                                                 %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Finite Fields}
+
+\reading{pp96-129}
+
+The set $\left\{0, 1, 2, \dots, n-1\right\}$ of the first $n$ non-negative
+integers is usually denoted by $\mathbb{Z}_n$ and plays an interesting role in
+cryptography. Since adding together two integers each less than $n$ might result in
+one that is greater than $n-1$ addition in $\mathbb{Z}_n$ is usually taken modulo $n$.
+For example $\mathbb{Z}_4 = \{0,1,2,3\}$ has the following addition table:
+
+\begin{tabular}{|c|cccc|}\hline
+  $+$ & $0$ & $1$ & $2$ & $3$ \\ \hline
+  $0$ & $0$ & $1$ & $2$ & $3$ \\
+  $1$ & $1$ & $2$ & $3$ & $0$ \\
+  $2$ & $2$ & $3$ & $0$ & $1$ \\
+  $3$ & $3$ & $0$ & $1$ & $2$ \\ \hline
+\end{tabular}
+\qquad\qquad
+$\underbrace{a+b}_{\mbox{add in }\mathbb{Z}_n}
+= \underbrace{(\mbox{(int)}a + \mbox{(int)}b)}_{\mbox{add in }\mathbb{Z}} \mbox{ mod } n$.
+
+\noindent With this form of addition modulo $n$, $\mathbb{Z}_n$ gives an important example
+of what is known as an abelian group.
+
+A \defn{group} $(G, \bullet)$ is a set $G$ together with a binary function
+$\bullet\colon G\times G\rightarrow G$ that obeys the following laws:
+\begin{description}
+  \item[Associativity] for all elements $a$, $b$, $c$ in $G$ one has
+  $(a\bullet b)\bullet c = a\bullet(b\bullet c)$,
+  \item[Identity] there is an element $e$ in $G$ for which $a\bullet e=a=e\bullet a$
+  for every element $a$ in $G$,
+  \item[Inverse] for every element $a$ in $G$ there is an element $a^\prime$ in $G$
+  for which $a\bullet a^\prime=e=a^\prime\bullet a$.
+\end{description}
+If a group also satisfies:
+\begin{description}
+  \item[Commutativity] for all elements $a$, $b$ in $G$ one has $a\bullet b=b\bullet a$,
+\end{description}
+then the group is called \defn{abelian} or \defn{commutative}.
+
+In cases where the group operation $\bullet$ is denoted by $+$, such as in
+the abelian group $\mathbb{Z}_n$ with addition modulo $n$,
+the identity $e$ is usually denoted by $0$
+and the inverse $a^\prime$ of an element $a$ by $-a$.
+Then a \defn{subtraction} operation can be defined by $a-b=a+(-b)$.
+
+Multiplication in $\mathbb{Z}_n$ can also be performed modulo $n$.
+For example $\mathbb{Z}_4$ has the following multiplication table:
+
+\begin{tabular}{|c|cccc|}\hline
+  $\cdot$ & $0$ & $1$ & $2$ & $3$ \\ \hline
+  $0$ & $0$ & $0$ & $0$ & $0$ \\
+  $1$ & $0$ & $1$ & $2$ & $3$ \\
+  $2$ & $0$ & $2$ & $0$ & $2$ \\
+  $3$ & $0$ & $3$ & $2$ & $1$ \\ \hline
+\end{tabular}
+\qquad\qquad
+$\underbrace{a\cdot b}_{\mbox{mult in }\mathbb{Z}_n}
+= \underbrace{(\mbox{(int)}a\cdot\mbox{(int)}b)}_{\mbox{mult in }\mathbb{Z}} \mbox{ mod } n$.
+
+\noindent With both addition and multiplication taken modulo $n$,
+$\mathbb{Z}_n$ is an example of what is known as a commutative ring.
+
+A \defn{ring} $(R,+,\cdot)$ is an abelian group $(R,+)$ together with a second binary function
+$\cdot\colon R\times R\rightarrow R$ that obeys the following laws:
+\begin{description}
+  \item[Associativity] for all elements $a$, $b$, $c$ in $R$ one has
+  $(a\cdot b)\cdot c = a\cdot(b\cdot c)$,
+  \item[Distributivity] for all elements $a$, $b$, $c$ in $R$ one has
+  $a\cdot(b+c)=a\cdot b + a\cdot c$ and $(a+b)\cdot c=a\cdot c+b\cdot c$.
+\end{description}
+If a ring also satisfies:
+\begin{description}
+  \item[Commutativity] for all elements $a$, $b$ in $R$ one has $a\cdot b=b\cdot a$,
+\end{description}
+then the ring is said to be \defn{commutative}.
+
+The \defn{greatest common divisor} of two positive integers $m$ and $n$
+is the greatest positive number $\mbox{gcd}(m,n)$ that divides both $m$ and $n$.
+For example, the divisors of $m=12$ are $1$, $2$, $3$, $4$, $6$, $12$,
+whereas the divisors of $n=28$ are $1$, $2$, $4$, $7$, $14$, $28$.
+Hence, the common divisors are $1$, $2$, $4$, so $\mbox{gcd}(12,28)=4$.
+The Euclidean algorithm provides a simple procedure for determining the
+greatest common divisor using just the integer modulo operation.
+
+\begin{theorem}{Euclidean Algorithm for Positive Integers}
+  Suppose $m$ and $n$ are positive integers. Then
+  $\mbox{gcd}(m,n)=\mbox{gcd}(n \mbox{ mod } m, m)$,
+  and so $\mbox{gcd}(m,n)$ can be calculated by taking repeated remainders
+  $r_1>r_2>\dots>r_n=\mbox{gcd}(m,n)$ until one of the remainders $r_n$ is a divisor
+  of the previous $r_{n-1}$:
+  \begin{eqnarray*}
+    r_1 &=& n \mbox{ mod } m \qquad\mbox{where $r_1<m$} \\
+    r_2 &=& m \mbox{ mod } r_1 \qquad\mbox{where $r_2<r_1$} \\
+    r_3 &=& r_1 \mbox{ mod } r_2 \qquad\mbox{where $r_3<r_2$} \\
+    r_4 &=& r_2 \mbox{ mod } r_3 \qquad\mbox{where $r_4<r_3$} \\
+    \vdots && \vdots \\
+    r_n &=& r_{n-2} \mbox{ mod } r_{n-1} \qquad\mbox{where $r_n<r_{n-1}$} \\
+    0 &=& r_{n-1} \mbox{ mod } r_n.
+  \end{eqnarray*}
+  Furthermore, there are integers $s$ and $t$ for which $\mbox{gcd}(m,n)=s\cdot m+t\cdot n$.
+\end{theorem}
+
+For example, $\mbox{gcd}(945,2415)$ can be found as follows:
+\begin{eqnarray*}
+  2415 &=& 2\cdot945+525 \qquad\mbox{so $r_1=525$} \\
+  945 &=& 1\cdot525+420 \qquad\mbox{so $r_2=420$} \\
+  525 &=& 1\cdot420+105 \qquad\mbox{so $r_3=105$} \\
+  420 &=& 4\cdot105+0 \qquad\mbox{so $r_4=0$}.
+\end{eqnarray*}
+Hence $\mbox{gcd}(945,2415)=105$.
+The values of $s$ and $t$ can then be found from these equations using them in reverse order:
+\begin{eqnarray*}
+  105 &=& 525 + (-1)\cdot420 \\
+  &=& 525 + (-1)\cdot(945+(-1)\cdot525) \\
+  &=& 2\cdot525+(-1)\cdot945 \\
+  &=& 2\cdot(2415+(-2)\cdot945)+(-1)\cdot945 \\
+  &=& (-5)\cdot945+2\cdot2415.
+\end{eqnarray*}
+
+Division in a ring can be more problematic than addition, subtraction, and multiplication.
+For instance since $2\cdot2=0$ in $\mathbb{Z}_4$, it is not possible to
+have a meaningful way to divide elements by $2$ (otherwise one could divide both
+sides of the equation $2\cdot2=0$ by $2$ to obtain that $2=0$ which is a contradiction).
+This problem arises whenever there are elements $a\neq0$ and
+$b\neq0$ in the ring for which $a\cdot b=0$.
+In the case of the ring $(\mathbb{Z}_n,+,\cdot)$ this problem can occur if and only if
+$n$ is not a prime number.
+
+If a commutative ring also satisfies:
+\begin{description}
+  \item[Identity] there is an element $1$ in $R$ for which $a\cdot1=a=1\cdot a$
+  for every element $a$ in $R$,
+  \item[Inverse] for every element $a\neq0$ in $R$ there is an element $a^{-1}$
+  for which $a\cdot a^{-1}=1=a^{-1}\cdot a$.
+\end{description}
+then the ring is called a \defn{field}. Essentially, a field is a ring in which division
+makes sense and can be defined by $a/b=a\cdot b^{-1}$ when $b\neq0$.
+
+From the previous comments one can conclude that $\mathbb{Z}_n$ with addition and
+multiplication modulo $n$ is a field if and only if $n$ is a prime number.
+For example, since $5$ is a prime $\mathbb{Z}_5$ is a field.
+This can be seen from its multiplication table as for $a\neq0$ and $b\neq0$
+one has $a\cdot b\neq0$ in $\mathbb{Z}_5$:
+
+\begin{tabular}{|c|ccccc|}\hline
+  $+$ & $0$ & $1$ & $2$ & $3$ & $4$ \\ \hline
+  $0$ & $0$ & $1$ & $2$ & $3$ & $4$ \\
+  $1$ & $1$ & $2$ & $3$ & $4$ & $0$ \\
+  $2$ & $2$ & $3$ & $4$ & $0$ & $1$ \\
+  $3$ & $3$ & $4$ & $0$ & $1$ & $2$ \\
+  $4$ & $4$ & $0$ & $1$ & $2$ & $3$ \\ \hline
+\end{tabular}
+\hfill
+\begin{tabular}{|c|c|}\hline
+  $a$ & $-a$ \\ \hline
+  $0$ & $0$ \\
+  $1$ & $4$ \\
+  $2$ & $3$ \\
+  $3$ & $2$ \\
+  $4$ & $1$ \\ \hline
+\end{tabular}
+\hfill
+\begin{tabular}{|c|ccccc|}\hline
+  $\cdot$ & $0$ & $1$ & $2$ & $3$ & $4$ \\ \hline
+  $0$ & $0$ & $0$ & $0$ & $0$ & $0$ \\
+  $1$ & $0$ & $1$ & $2$ & $3$ & $4$ \\
+  $2$ & $0$ & $2$ & $4$ & $1$ & $3$ \\
+  $3$ & $0$ & $3$ & $1$ & $4$ & $2$ \\
+  $4$ & $0$ & $4$ & $3$ & $2$ & $1$ \\ \hline
+\end{tabular}
+\hfill
+\begin{tabular}{|c|c|}\hline
+  $a$ & $a^{-1}$ \\ \hline
+  $0$ & none \\
+  $1$ & $1$ \\
+  $2$ & $3$ \\
+  $3$ & $2$ \\
+  $4$ & $4$ \\ \hline
+\end{tabular}
+
+The inverse $a^{-1}$ can be found from the row of the multiplication table for the element
+$a$ by locating the column that has the identity element $1$.
+However, it can also be calculated directly in $\mathbb{Z}_p$
+without first finding the multiplication
+table by using the Euclidean algorithm.
+Since $\mbox{gcd}(a,p)=1$, and the values $s$ and $t$ satisfy
+$\mbox{gcd}(a,p)=s\cdot a+t\cdot p$, it follows that $s\mbox{ mod }p=a^{-1}$.
+For example, ${12}^{-1}$ can be found in $\mathbb{Z}_{17}$ by:
+\begin{eqnarray*}
+  17 &=& 1\cdot12+5 \qquad\mbox{so $r_1=5$} \\
+  12 &=& 2\cdot5+2 \qquad\mbox{so $r_2=2$} \\
+  5 &=& 2\cdot2+1 \qquad\mbox{so $r_3=1$} \\
+  2 &=& 2\cdot1+0 \qquad\mbox{so $r_4=0$}.
+\end{eqnarray*}
+Hence $\mbox{gcd}(12,17)=1$ as expected, and $s$ and $t$ are found by:
+\begin{eqnarray*}
+  1 &=& 5 + (-2)\cdot2 \\
+  &=& 5 + (-2)\cdot(12+(-2)\cdot5) \\
+  &=& 5\cdot5+(-2)\cdot12 \\
+  &=& 5\cdot(17+(-1)\cdot12)+(-2)\cdot12 \\
+  &=& (-7)\cdot12+5\cdot17.
+\end{eqnarray*}
+Hence ${12}^{-1}=(-7)\mbox{ mod }17=10$ in $\mathbb{Z}_{17}$
+(and indeed $12\cdot10\mbox{ mod }17=1$).
+
+Fields with a finite set of elements are important in cryptography,
+particularly finite fields where there are $2^m$ elements rather than
+$p$ elements for some prime $p$.
+Fortunately, for every prime $p$ and positive integer $m$ there is a field denoted by
+$GF(p^m)$ with $p^m$ elements,
+and called the \defn{Galios field} of order $p^m$.
+
+One of the most intuitive ways of understanding the addition $+$ and
+multiplication $\cdot$ operations in the field $GF(p^m)$
+is to consider each of the elements
+$a=\left(a_0,a_1,a_2,\ldots,a_{m-1}\right)$ in $GF(p^m)$ as a polynomial
+$f(x)=a_{m-1}x^{m-1}+\cdots+a_2x^2+a_1x+a_0$,
+where $a_0$, $a_1$, \dots, $a_{m-1}$ are elements in $\mathbb{Z}_p$.
+Then addition in $GF(p^m)$ is just the addition of two polynomials
+whose coefficients are added together modulo $p$.
+For example, in the field $GF(5^4)$ the polynomials
+$f(x)=3x^3+1x^2+0x+4$ and $g(x)=4x^3+2x^2+3x+2$
+can be considered as elements whose sum is
+$f(x)+g(x)=2x^3+3x^2+3x+1$.
+
+Multiplication in $GF(p^m)$ is slightly more complicated as the product of
+two polynomials in $GF(p^m)$ might produce a polynomial of degree greater
+than $m-1$, but simply discarding higher terms would not result in a field.
+For example $\left(x^3+0x^2+0x+0\right)\cdot\left(x+0\right)=x^4$
+which should not be considered the zero element $0x^3+0x^2+0x+0$ in $GF(5^4)$.
+What is needed when a product results in a polynomial of degree greater than $m-1$
+is to take the remainder when the product is divided by a
+polynomial that acts much like a prime number.
+A polynomial of degree $m$ is called \defn{reducible} in $GF(p^m)$ if it
+factorizes as a product $f(x)\cdot g(x)$ of two
+polynomials that are in $GF(p^m)$, otherwise it is called \defn{irreducible} in $GF(p^m)$.
+For example, $x^4+x^2+1$ is reducible in $GF(5^4)$ as
+$x^4+x^2+1=\left(x^2+x+1\right)\cdot\left(x^2+4x+1\right)$.
+Similarly, $x^4$ is reducible as $x^4=x^3\cdot x$,
+but $x^4+2$ can be shown to be irreducible in $GF(5^4)$.
+Once an irreducible polynomial $q(x)$ has been found multiplication in $GF(p^m)$
+can be defined by:
+\begin{displaymath}
+  \underbrace{f(x)\cdot g(x)}_{\mbox{mult in }GF(p^m)} =
+  \underbrace{f(x)\cdot g(x)}_{\mbox{mult as polys}} \mbox{ mod } q(x).
+\end{displaymath}
+Choosing a different irreducible polynomial results in a slightly different
+multiplication operation, but surprisingly gives essentially the same field
+but with the elements permuted.
+In fact it can be shown that the fields $GF(p^m)$
+are the only finite fields that are possible
+(mathematically, any finite field must be \defn{isomorphic} to $GF(p^m)$
+for some prime $p$ and $m\geq1$, meaning that they are essentially the
+same apart from what the elements are called).
+
+Note that the field $\mathbb{Z}_p$ is just a special case of $GF(p^m)$
+where $m=1$.
+Also, inverses of elements in $GF(p^m)$ can be calculated directly using
+a polynomial equivalent of the Euclidean Algorithm.
+
+The field $GF(2^8)$ is often chosen for cryptography applications
+as it has $2^8=256$ elements, one element for each possible byte value.
+The elements can be considered as polynomials
+$a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0$ where
+$a_0$,$a_1$,$a_2$,$a_3$,$a_4$,$a_5$,$a_6$,$a_7$ are elements of $\mathbb{Z}_2$.
+Addition in $\mathbb{Z}_2$ is simply XOR so addition of two polynomials in
+$GF(2^8)$ is simply just a bitwise XOR operation of the corresponding coefficients.
+For example, adding together $x^7+x^4+x$ and $x^5+x^4+x+1$ results in
+$x^7+x^5+1$.
+
+It can be shown that there are 30 possible irreducible polynomials of degree $8$
+in $GF(2^8)$, such as the polynomial $q(x)=x^8+x^4+x^3+x+1$
+which is the polynomial chosen for the AES cipher (discussed in Section
+\ref{Se:AdvancedEncryptionStandard}).
+Using this irreducible polynomial, the product of $x^7+x^4+x$ and $x^5+x^4+x+1$
+in $GF(2^8)$ is given by:
+\begin{eqnarray*}
+  \overbrace{\left(x^7+x^4+x\right)\cdot\left(x^5+x^4+x+1\right)}^{\mbox{mult in }GF(2^8)}
+  &=&  \left( x^{12}+x^{11}+x^8+x^7\right. \\
+  &&  \quad+x^9+x^8+x^5+x^4 \\
+  &&  \quad\left.+x^6+x^5+x^2+x \right) \mbox{ mod } q(x) \\
+  &=& \left( x^{12}+x^{11}+x^9+x^7 \right. \\
+  &&  \quad\left.+x^6+x^4+x^2+x \right) \mbox{ mod } q(x) \\
+  &=& x^7+x^4+x+1,
+\end{eqnarray*}
+where the remainder of dividing $x^{12}+x^{11}+x^9+x^7+x^6+x^4+x^2+x$
+by $q(x)=x^8+x^4+x^3+x+1$ can be found using long division.
+
+
+\begin{exercise}[The Finite Field $GF(2^2)$]
+  Determine the addition, negative, multiplication, and inverse tables
+  for the finite field $GF(2^2)$ which consists of the four elements
+  $0$, $1$, $x$, $x+1$, using the irreducible polynomial
+  $q(x)=x^2+x+1$ for the multiplication operation.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Advanced Encryption Standard                                                  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Advanced Encryption Standard}\label{Se:AdvancedEncryptionStandard}
+
+\reading{pp135-160}
+
+As computing power increased the DES cipher with a key length of only 56 bits
+became more and more vulnerable to a brute-force attack,
+so a competition was held where new algorithms were suggested for its eventual
+replacement. During the competition the cipher algorithms
+could be openly scrutinized for susceptibility to cryptanalysis
+attacks and their speed and ease of implementation compared.
+In 2000 a symmetric block cipher algorithm known as \defn{Rijndael} was
+selected as the new \defn{Advanced Encryption Standard} (AES) cipher.
+This was considered a landmark for security as it demonstrated that
+open scrutiny of an encryption algorithm could result in better security
+than a secretly developed algorithm.
+
+AES operates on blocks of length 128 bits (16 bytes), double that of DES,
+although the Rijndael algorithm also allows for block sizes of 192 or 256 bits.
+Keys can be of length 128, 192, or 256 bits.
+It treats a 16-byte block of plaintext as a $4\times4$ matrix of bytes arranged
+column by column,
+so that the bytes \begin{code}73 65 63 75 72 65 20 61 6E 64 20 72 65 6C 69 61\end{code}
+(for the ASCII string \begin{code}"secure and relia"\end{code})
+are represented by the matrix:
+\begin{displaymath}
+\left(\begin{array}{cccc}
+  \mbox{\begin{code}73\end{code}} & \mbox{\begin{code}72\end{code}}
+    & \mbox{\begin{code}6E\end{code}} & \mbox{\begin{code}65\end{code}} \\
+  \mbox{\begin{code}65\end{code}} & \mbox{\begin{code}65\end{code}}
+    & \mbox{\begin{code}64\end{code}} & \mbox{\begin{code}6C\end{code}} \\
+  \mbox{\begin{code}63\end{code}} & \mbox{\begin{code}20\end{code}}
+    & \mbox{\begin{code}20\end{code}} & \mbox{\begin{code}69\end{code}} \\
+  \mbox{\begin{code}75\end{code}} & \mbox{\begin{code}61\end{code}}
+    & \mbox{\begin{code}72\end{code}} & \mbox{\begin{code}61\end{code}}
+\end{array}\right).
+\end{displaymath}
+Firstly, the matrix is passed through a bitwise XOR with the 128-bit key $K$
+(also arranged as a $4\times4$ byte matrix).
+Then the matrix passes through 10 rounds, each consisting of three
+operations (except the final tenth round which has just two operations),
+each followed by a bitwise XOR using a key $K_i$ that is obtained
+from the original key $K$ and which gets modified with each round.
+
+The first operation in each round performs a simple substitution of each byte
+in the matrix using an S-box:
+\begin{center}
+\nudgedown{1}
+\begin{tabular}{|c|c|} \hline
+  \multicolumn{2}{|l|}{\textit{AES S-box substitutions}} \\ \hline\hline
+  \textit{Byte} & \textit{Substitution} \\ \hline
+  \begin{code}00\end{code} & \begin{code}63\end{code} \\
+  \begin{code}01\end{code} & \begin{code}7C\end{code} \\
+  \begin{code}02\end{code} & \begin{code}77\end{code} \\
+  \begin{code}03\end{code} & \begin{code}7B\end{code} \\
+  \begin{code}04\end{code} & \begin{code}F2\end{code} \\
+  \vdots                   & \vdots \\
+  \begin{code}FF\end{code} & \begin{code}16\end{code} \\ \hline
+\end{tabular}\end{center}
+\nudgedown{1}
+
+Unlike the obscure and secretive approach of DES S-boxes, it is well-known
+how the AES S-box was designed. Firstly, each byte $a_7a_6a_5a_4a_3a_2a_1a_0$
+is considered as a polynomial element
+$a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0$
+in the finite field $GF(2^8)$. For all but the zero byte, its inverse
+in $GF(2^8)$ is found, giving another byte $b_7b_6b_5b_4b_3b_2b_1b_0$ which
+is then fed into the following equation using $\mathbb{Z}_2$ arithmetic
+to give the S-box substitution byte:
+\begin{displaymath}\begin{scriptsize}
+  \left(\begin{array}{cccccccc}
+    1&0&0&0&1&1&1&1\\
+    1&1&0&0&0&1&1&1\\
+    1&1&1&0&0&0&1&1\\
+    1&1&1&1&0&0&0&1\\
+    1&1&1&1&1&0&0&0\\
+    0&1&1&1&1&1&0&0\\
+    0&0&1&1&1&1&1&0\\
+    0&0&0&1&1&1&1&1
+  \end{array}\right)
+  \left(\begin{array}{c}
+    b_0\\b_1\\b_2\\b_3\\b_4\\b_5\\b_6\\b_7
+  \end{array}\right)
+  +
+  \left(\begin{array}{c}
+    1\\1\\0\\0\\0\\1\\1\\0
+  \end{array}\right).
+\end{scriptsize}\end{displaymath}
+\begin{figure*}\begin{center}
+\begin{pspicture}(-3.75,-1)(4.25,13.5)
+  \rput(2,13){\rnode{AESin}{\scriptsize$\left(\!\!\begin{array}{cccc}
+      p_1 & p_5 & p_9    & p_{13} \\
+      p_2 & p_6 & p_{10} & p_{14} \\
+      p_3 & p_7 & p_{11} & p_{15} \\
+      p_4 & p_8 & p_{12} & p_{16}
+    \end{array}\!\!\right)$}}
+
+  \rput(2,11.5){\rnode{X0}{$\bigoplus$}}
+  \rput(3.85,11.5){\rnode{K0}{$K$}}
+  \ncline[arrows=->]{AESin}{X0}\naput{\scriptsize{128 bit}}
+  \ncline[arrows=->]{K0}{X0}
+
+  \rput(2,10.75){\rnode{S1}{\psframebox{\makebox[30mm]{S-box substitution}}}}
+  \rput(2,10){\rnode{R1}{\psframebox{\makebox[30mm]{Rotate each row}}}}
+  \rput(2,9.25){\rnode{M1}{\psframebox{\makebox[30mm]{Mix columns}}}}
+  \rput(2,8.5){\rnode{X1}{$\bigoplus$}}
+  \rput(3.85,8.5){\rnode{K1}{$K_1$}}
+  \ncline[arrows=->]{X0}{S1}
+  \ncline[arrows=->]{S1}{R1}
+  \ncline[arrows=->]{R1}{M1}
+  \ncline[arrows=->]{M1}{X1}
+  \ncline[arrows=->]{K1}{X1}
+
+  \pnode(2,7.95){S2}
+  \rput(2,7.55){\rnode{DOTS}{\vdots}}
+  \pnode(2,7.05){X8}
+  \ncline[arrows=->]{X1}{S2}
+
+  \rput(2,6.5){\rnode{S9}{\psframebox{\makebox[30mm]{S-box substitution}}}}
+  \rput(2,5.75){\rnode{R9}{\psframebox{\makebox[30mm]{Rotate each row}}}}
+  \rput(2,5){\rnode{M9}{\psframebox{\makebox[30mm]{Mix columns}}}}
+  \rput(2,4.25){\rnode{X9}{$\bigoplus$}}
+  \rput(3.85,4.25){\rnode{K9}{$K_9$}}
+  \ncline[arrows=->]{X8}{S9}
+  \ncline[arrows=->]{S9}{R9}
+  \ncline[arrows=->]{R9}{M9}
+  \ncline[arrows=->]{M9}{X9}
+  \ncline[arrows=->]{K9}{X9}
+
+  \rput(2,3.5){\rnode{S10}{\psframebox{\makebox[30mm]{S-box substitution}}}}
+  \rput(2,2.75){\rnode{R10}{\psframebox{\makebox[30mm]{Rotate each row}}}}
+  \rput(2,2){\rnode{X10}{$\bigoplus$}}
+  \rput(3.85,2){\rnode{K10}{$K_{\!10}$}}
+  \ncline[arrows=->]{X9}{S10}
+  \ncline[arrows=->]{S10}{R10}
+  \ncline[arrows=->]{R10}{X10}
+  \ncline[arrows=->]{K10}{X10}
+
+  \rput(2,0.5){\rnode{AESout}{\scriptsize$\left(\!\!\begin{array}{cccc}
+      c_1 & c_5 & c_9    & c_{13} \\
+      c_2 & c_6 & c_{10} & c_{14} \\
+      c_3 & c_7 & c_{11} & c_{15} \\
+      c_4 & c_8 & c_{12} & c_{16}
+    \end{array}\!\!\right)$}}
+  \ncline[arrows=->]{X10}{AESout}\naput{\scriptsize{128 bit}}
+
+  \rput(2,-0.5){AES Encryption Algorithm}
+\end{pspicture}
+\end{center}\end{figure*}
+The AES S-box gives an invertible permutation of the bytes designed to be
+resistant to currently known cryptanalysis attacks and optimized to
+ensure a low correlation between each byte and its substituted byte.
+For performance, the S-box and its inverse (which is used for AES decryption)
+are usually stored in memory rather than being recalculated each time
+for the algorithm.
+
+The second operation in each round rotates the bytes row by row in
+the matrix. The first row is left unchanged, whereas the second row is rotated
+one entry to the left, the third row by two entries to the left,
+and the fourth row by three entries to the left, resulting in a transposition
+of the bytes in the block:
+
+\begin{displaymath}
+  \left(\begin{array}{cccc}
+    m_1 & m_5 & m_9    & m_{13} \\
+    m_2 & m_6 & m_{10} & m_{14} \\
+    m_3 & m_7 & m_{11} & m_{15} \\
+    m_4 & m_8 & m_{12} & m_{16}
+  \end{array}\right)
+  \hfill \shortstack{Rotate\\ $\Longrightarrow$} \hfill
+  \left(\begin{array}{cccc}
+    m_1    & m_5    & m_9    & m_{13} \\
+    m_6    & m_{10} & m_{14} & m_2 \\
+    m_{11} & m_{15} & m_3    & m_7 \\
+    m_{16} & m_4    & m_8    & m_{12}
+  \end{array}\right).
+\end{displaymath}
+
+The third operation that is used in the first nine rounds multiplies
+the matrix on the left by the invertible matrix:
+\begin{displaymath}
+  \left(\begin{array}{cccc}
+    02 & 03 & 01 & 01 \\
+    01 & 02 & 03 & 01 \\
+    01 & 01 & 02 & 03 \\
+    01 & 01 & 01 & 02
+  \end{array}\right)
+\end{displaymath}
+where again each byte $a_7a_6a_5a_4a_3a_2a_1a_0$
+is considered as a polynomial element
+$a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0$
+in the finite field $GF(2^8)$ for the purpose of addition and
+matrix multiplication (so $01$ is the constant polynomial $1$,
+$02$ is the polynomial $x$, and $03$ is the polynomial $x+1$).
+These particular entries in the matrix were chosen since
+multiplication in $GF(2^8)$ by the element $02$ or $03$
+can be implemented using at most a bit-shift and an XOR
+(the entries in its inverse require more sophisticated
+implementations, but in practice encryption is often performed more frequently
+than decryption, such as when CFB or OFB cipher modes are used).
+Also, the entries ensure that after a few rounds of row rotations and mix columns
+all the output bits depend on all the input bits of the plaintext block.
+
+If the key used for a round is the matrix:
+\begin{displaymath}
+  \left(\begin{array}{cccc}
+    k_1 & k_5 & k_9    & k_{13} \\
+    k_2 & k_6 & k_{10} & k_{14} \\
+    k_3 & k_7 & k_{11} & k_{15} \\
+    k_4 & k_8 & k_{12} & k_{16}
+  \end{array}\right)
+\end{displaymath}
+(starting with the original key $K$) then the key used for the next round is given by:
+\begin{displaymath}
+  \left(\begin{array}{cccc}
+    k_1^\prime & k_5^\prime & k_9^\prime    & k_{13}^\prime \\
+    k_2^\prime & k_6^\prime & k_{10}^\prime & k_{14}^\prime \\
+    k_3^\prime & k_7^\prime & k_{11}^\prime & k_{15}^\prime \\
+    k_4^\prime & k_8^\prime & k_{12}^\prime & k_{16}^\prime
+  \end{array}\right)
+\end{displaymath}
+where for $i\geq5$ the entries are given by
+$k_i^\prime=k_{i-4}^\prime\oplus k_i$ (each entry is the XOR of the entry to its
+left with the corresponding entry in the previous key).
+For the first column of the new key a more complicated procedure is used to ensure
+the key changes round by round:
+\begin{eqnarray*}
+  k_1^\prime &=& \mbox{Sub}(k_{14}) \oplus R \oplus k_1 \\
+  k_2^\prime &=& \mbox{Sub}(k_{15}) \oplus R \oplus k_2 \\
+  k_3^\prime &=& \mbox{Sub}(k_{16}) \oplus R \oplus k_3 \\
+  k_4^\prime &=& \mbox{Sub}(k_{13}) \oplus R \oplus k_4 \\
+\end{eqnarray*}
+where $\mbox{Sub}$ denotes the S-box substitution and
+$R$ is a byte that depends on the round.
+\begin{figure*}[h]\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|} \hline
+  \multicolumn{11}{|l|}{\textit{R byte values for calculating new key each round}}
+    \\ \hline\hline
+  \textit{Round} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+  \textit{R byte} & \begin{code}01\end{code} & \begin{code}02\end{code}
+    & \begin{code}04\end{code} & \begin{code}08\end{code}
+    & \begin{code}10\end{code} & \begin{code}20\end{code}
+    & \begin{code}40\end{code} & \begin{code}80\end{code}
+    & \begin{code}1B\end{code} & \begin{code}36\end{code} \\ \hline
+\end{tabular}
+\end{center}\end{figure*}
+
+Although the decryption algorithm is just the reverse of the encryption
+algorithm, it must undo the operations in the reverse order to the
+encryption algorithm, and so has a separate implementation
+from encryption. However, one feature of AES is that by slightly changing
+how the keys are calculated for each round during decryption the steps
+can be reversed using the same order in which they were used for encryption,
+enabling encryption and decryption to share much of their implementation
+details (this is actually made possible by having the last round of
+encryption not apply the mix columns operation).
+
+The default JCA cryptography provider SunJCE supports AES, and the example from Section
+\ref{Se:DataEncryptionStandard} can be modified to use AES simply by replacing
+\begin{code}DES\end{code} by \begin{code}AES\end{code} in the
+\begin{code}getInstance\end{code} method of \begin{code}KeyGenerator\end{code}
+and of \begin{code}Cipher\end{code}.
+As AES supports different key lengths some cryptographic security providers
+might support 192-bit or 256-bit keys as well as the default 128-bit keys.
+Different length keys can be produced by \begin{code}KeyGenerator\end{code}
+by including the statement:
+\begin{quote}\begin{code}\begin{verbatim}
+kg.init(128);
+\end{verbatim}\end{code}\end{quote}
+before the key is generated.
+The class \begin{code}AESExample\end{code} uses AES encryption
+but in CBC mode rather than the default ECB mode, and so
+requires an initialization vector.
+An initialization vector is created using an \begin{code}IvParameterSpec\end{code}
+and specifying a \begin{code}byte[]\end{code} array:
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] ivBytes = ...; // array of 16 bytes
+IvParameterSpec initVector = new IvParameterSpec(ivBytes);
+\end{verbatim}\end{code}\end{quote}
+The \begin{code}IvParameterSpec\end{code} can then be included as a parameter
+to the \begin{code}Cipher\end{code} method \begin{code}init\end{code} whenever
+the cipher is initialized for encryption or for
+decryption:
+\begin{quote}\begin{code}\begin{verbatim}
+cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+\end{verbatim}\end{code}\end{quote}
+If an initialization vector is not specified to the \begin{code}Cipher\end{code}
+method \begin{code}init\end{code} and it is being initialized for encryption
+then it generates a suitable random vector itself, whose \begin{code}byte[]\end{code} array
+can then be obtained from the \begin{code}Cipher\end{code}
+method \begin{code}getIV\end{code}. If however it is being initialized for
+decryption then it will throw an \begin{code}InvalidKeyException\end{code}
+if an initialization vector is required but not specified.
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A simple class that demonstrates how AES encryption with CBC mode
+   is achieved using the Java Cryptography Architecture
+   @author Andrew Ensor
+*/
+...
+public class AESExample
+{
+   public static void main(String[] args)
+   {  try
+      {  // generate a secret key for AES
+         KeyGenerator kg = KeyGenerator.getInstance("AES");
+         kg.init(128); // 128-bit key used for AES
+         SecretKey key = kg.generateKey();
+         // create a cipher
+         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+         // obtain the plaintext
+         ...
+         // create an initialization vector (required for CBC)
+         byte[] ivBytes = {51, 50, 7, -19, 120, 111, -110, 52, 9, -21,
+            -6, -15, -95, 117, 36, -89}; // random array of 16 bytes
+         IvParameterSpec initVector = new IvParameterSpec(ivBytes);
+         // initialize cipher for encryption
+         cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+         // encrypt the plaintext
+         byte[] ciphertext = cipher.doFinal(plaintext);
+         ...
+         // decrypt the ciphertext
+         cipher.init(Cipher.DECRYPT_MODE, key, initVector);
+         byte[] deciphertext = cipher.doFinal(ciphertext);
+         System.out.println("Deciphered is:"+new String(deciphertext));
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+      catch (NoSuchPaddingException e)
+      {  System.err.println("Padding scheme not available: "+e);
+      }
+      catch (InvalidKeyException e)
+      {  System.err.println("Invalid key: "+e);
+      }
+      catch (InvalidAlgorithmParameterException e)
+      {  System.err.println("Invalid algorithm parameter: "+e);
+      }
+      catch (IllegalBlockSizeException e)
+      {  System.err.println("Cannot pad plaintext: "+e);
+      }
+      catch (BadPaddingException e)
+      {  System.err.println("Exception with padding: "+e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+\begin{exercise}[Performance of DES and AES]
+Prepare a program that can be used to compare the performance of the DES cipher
+with the AES cipher for different length plaintext and plot a graph of
+time versus length.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Other Symmetric Ciphers                                                       %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Other Symmetric Ciphers}\label{Se:OtherSymmetricCiphers}
+
+\reading{pp175-180,189-194}
+
+The DES cipher is gradually being phased out and replaced by more secure ciphers
+such as AES with a longer key and so less susceptible to brute-force attacks.
+However, AES is a newer and completely different algorithm which has
+not yet had the same amount of cryptanalysis testing as has DES.
+Furthermore, there has been a significant software and hardware
+investment in the DES algorithm. Until AES is fully accepted as the defacto symmetric block
+cipher a popular alternative has been to apply the DES encryption several times
+using different keys.
+
+\noindent
+\begin{minipage}{0.65\textwidth}
+One attempt at improving DES might be to apply it twice, once to
+the plaintext with one 56-bit key $K_1$ and then to that ciphertext $X$
+with another 56-bit key $K_2$, essentially resulting in a 112-bit key.
+This way a basic brute-force attack would take
+$2^{56}$ times longer than a brute-force attack on single DES, making it
+infeasible with current technology.
+However, simply applying a block cipher such as DES twice can be susceptible
+to the \defn{meet-in-the-middle} attack
+if some blocks of plaintext and its corresponding ciphertext are known to a cryptanalyst.
+\hfill This attack works on double DES by taking a block of plaintext
+\end{minipage}\hfill
+\begin{minipage}{0.25\textwidth}
+%\hfill
+\begin{pspicture}[shift=*](0,0.1)(4,4.6)
+  \rput(2,4.5){\rnode{P}{\psframebox{\makebox[30mm]{plaintext}}}}
+  \rput(2,3.5){\rnode{E1}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(3.8,3.5){\rnode{K1}{$K_1$}}
+  \rput(2,2.5){\rnode{X}{\psframebox{\makebox[30mm]{$X$}}}}
+  \rput(2,1.5){\rnode{E2}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(3.8,1.5){\rnode{K2}{$K_2$}}
+  \rput(2,0.5){\rnode{C}{\psframebox{\makebox[30mm]{ciphertext}}}}
+
+  \psset{arrows=->}
+  \ncline{P}{E1}\ncline{K1}{E1}
+  \ncline{E1}{X}
+  \ncline{X}{E2}\ncline{K2}{E2}
+  \ncline{E2}{C}
+\end{pspicture}
+\end{minipage}
+
+and encrypting it
+with all $2^{56}$ possible values for $K_1$, storing the resulting possible $X$ blocks
+in a suitable data structure along with the key used.
+It then takes the corresponding ciphertext block and decrypts it with all
+$2^{56}$ possible values for $K_2$ and checks if each resulting decrypted block
+is already in the data structure. Whenever the same value of $X$ is obtained
+the keys used for encryption and for decryption give potential values for
+$K_1$ and $K_2$. Since this could happen various times by chance
+the potential values for $K_1$ and $K_2$ are then checked with another known plaintext
+and ciphertext.
+
+\begin{minipage}{0.65\textwidth}
+Because of the meet-in-the-middle attack three stages are instead used with DES.
+\defn{Triple DES} with two keys $K_1$ and $K_2$ (112-bit key) is widely used, where $K_1$ is
+used in the first stage to encrypt the plaintext, which then gets decrypted but by
+using $K_2$ (which effectively scrambles it more), and then it is encrypted
+using $K_1$ again in the third stage.
+Decryption is chosen rather than encryption in the second stage
+so that single DES encryption can be obtained (if required) by setting $K_1=K_2$.
+Since there is a potential attack (albeit impractical as it requires $2^{56}$ plaintext and corresponding ciphertext
+\end{minipage}\hfill%
+\begin{minipage}{0.25\textwidth}
+\begin{pspicture}[shift=*](0,0.1)(4,4.6)
+  \rput(2,4.5){\rnode{P}{\psframebox{\makebox[30mm]{plaintext}}}}
+  \rput(2,3.5){\rnode{E1}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(3.8,3.5){\rnode{K1}{$K_1$}}
+  \rput(2,2.5){\rnode{E2}{\psframebox[fillstyle=solid,fillcolor=yellow]{decrypt}}}
+  \rput(3.8,2.5){\rnode{K2}{$K_2$}}
+  \rput(2,1.5){\rnode{E3}{\psframebox[fillstyle=solid,fillcolor=yellow]{encrypt}}}
+  \rput(3.8,1.5){\rnode{K3}{$K_1$}}
+  \rput(2,0.5){\rnode{C}{\psframebox{\makebox[30mm]{ciphertext}}}}
+  \psset{arrows=->}
+  \ncline{P}{E1}\ncline{K1}{E1}
+  \ncline{E1}{E2}\ncline{K2}{E2}
+  \ncline{E2}{E3}\ncline{K3}{E3}
+  \ncline{E3}{C}
+\end{pspicture}
+\end{minipage}
+\noindent
+
+blocks to be available to a cryptanalyst),
+triple DES is now often used with three keys, where the third key is used in the
+last stage rather than again using $K_1$.
+However, the required 168-bit key is quite a bit longer than 128-bit keys used by
+other algorithms presumed to be at least as secure, and DES is itself considered quite slow
+so applying it three times over for each block makes the encryption process even
+three times slower.
+
+Another popular symmetric block cipher is \defn{Blowfish}, designed in 1993 as an
+open and general-purpose replacement for DES. It uses block sizes of 64 bits and a key
+length between 32 and 448 bits (with default 128-bit key). Its algorithm
+has a similar structure to DES, also using 16 rounds with two 32-bit halves,
+but it uses pre-computed key-dependent S-boxes. This makes the algorithm quite fast
+when the same key can be reused multiple times.
+Although there is no publicly-known successful attack on Blowfish, block ciphers
+that use larger blocks than the 64-bit blocks used by DES, triple DES,
+and Blowfish are generally now preferred.
+As a consequence, Blowfish evolved to become \defn{Twofish},
+which uses 128-bit blocks (the same as the AES Rijndael algorithm),
+and key length between 128 and 256 bits. On most platforms Twofish is slightly
+slower than the Rijndael algorithm for 128-bit keys but is faster for 256-bit keys.
+
+JCA supports triple DES with keys of length 112 (two key triple DES) and
+168 (three key triple DES) using the algorithm name \begin{code}DESede\end{code}.
+It also supports Blowfish with the algorithm name \begin{code}Blowfish\end{code}.
+
+The most popular stream cipher in use is the \defn{Rivest Cipher 4} (RC4) cipher.
+It has a remarkably fast and simple algorithm that can use a key length anywhere
+between 8 and 2048 bits (1 to 256 bytes), although at the very minimum 40 bits
+(5 bytes) should be used to produce a \defn{key stream} of bytes.
+To encrypt the plaintext bytes, they are passed through a bitwise XOR with
+the key stream bytes.
+The encrypted bytes can then be decrypted by passing them again through a bitwise XOR
+with the same key stream to recover the plaintext bytes.
+The security of RC4 relies on the key stream bytes being unpredictable without
+knowledge of the key that produced the stream.
+RC4 starts by initializing a state array $S$, which is a \begin{code}byte[]\end{code}
+array of length $256$ that holds some unpredictable permutation of the bytes
+$0$, $1$, $2$, \dots, $255$. The initial permutation of the bytes is determined
+by a key $K$.
+\begin{figure*}[htb]
+\begin{codebox}
+\Procname{$\proc{RC4-Initialization}(K)$}
+\li \Comment initialize the state array $S$ to contain the bytes $0,1,2,\dots,255$
+\li \For $i \gets 0$ \To $255$ \Do
+\li    $S[i] \gets i$
+    \End
+\li \Comment use key $K$ to permute the bytes in $S$
+\li $m \gets \id{length}[K]$
+\li $j \gets 0$
+\li \For $i \gets 0$ \To $255$ \Do
+\li    $j \gets (j + S[i] + K[i \mbox{ mod } m]) \mbox{ mod } 256$
+\li    swap $S[i]$ and $S[j]$
+    \End
+\li \Comment initialize the index pointers $a$ and $b$
+\li $a \gets 0$
+\li $b \gets 0$
+\end{codebox}
+
+\begin{codebox}
+\Procname{$\proc{RC4-GetNextByte}()$}
+\li \Comment update the index pointers $a$ and $b$
+\li $a \gets (a+1) \mbox{ mod } 256$
+\li $b \gets (b+S[a]) \mbox{ mod } 256$
+\li swap $S[a]$ and $S[b]$ \`\Comment further permute the bytes in $S$
+\li $t \gets (S[a] + S[b]) \mbox{ mod } 256$ \`\Comment next index of $S$ to use
+\li \Return $S[t]$ \`\Comment next byte to use in key stream
+\end{codebox}
+\end{figure*}
+The array $S$ is used to determine which byte is next used in
+the key stream. Instead of simply iterating through the bytes in $S$
+using a single index variable $a$
+(which would result in the key stream repeating itself after $256$ bytes),
+another variable $b$ is also used to help determine which byte is next used
+and to further permute the array $S$ with each byte generated.
+
+Although RC4 is not considered to provide the same level of security
+as ciphers such as AES, and the key stream it produces has been
+shown to be biased in terms of certain sequences,
+provided a reasonable length key (such as 128 bits)
+is used it is considered reasonably secure for some practical uses.
+Due to its encryption/decryption speed and its comparative simplicity,
+the RC4 stream cipher was adopted for use in the
+Secure Sockets Layer/Transport Layer Security (SSL/TLS) standards,
+in the Wired Equivalent Privacy (WEP) protocol for 802.11 wireless network security,
+and in the WiFi Protected Access (WPA) protocol.
+However, its implementation in the WEP protocol used a flawed method to
+generate keys, enabling the protocol to be compromised in 2001
+by an attack due to Fluhrer, Mantin, and Shamir.
+
+When an encryption technique, such as RC4, is performed by passing the plaintext through an XOR
+with a key stream it is important that different keys be used to encrypt each plaintext.
+Otherwise a cryptanalyst could perform a bitwise XOR of two encrypted messages to obtain
+an XOR of the two original plaintext, and so obtain information where the plaintext differ
+from each other.
+
+For convenience, JCA offers the classes \begin{code}CipherInputStream\end{code}
+and \begin{code}CipherOut\-putStream\end{code} that act as filtering streams,
+providing encryption of a data stream.
+Both filter streams accept an initialized \begin{code}Cipher\end{code} object passed
+to their constructor. Interestingly, the \begin{code}Cipher\end{code} can itself
+be a block cipher such as DES or AES.
+If a block cipher is used with \begin{code}CipherOutputStream\end{code}
+one should ensure that the \begin{code}CipherOutputStream\end{code} method
+\begin{code}close\end{code} is called (rather than just \begin{code}flush\end{code}) when the
+bytes have all been written to the output stream, since if the total number of bytes
+written is not an exact multiple of the block size the \begin{code}flush\end{code}
+method does not pad the last block so the block is still not written out.
+
+The class \begin{code}RC4Example\end{code} uses JCA cipher streams
+with an RC4 stream cipher given the name
+\begin{code}ARCFOUR\end{code} (for Alleged-RC4 as RSA never officially
+acknowledged that this is the true RC4 algorithm).
+This example also demonstrates how a desired key can be created
+using the \begin{code}SecretKeySpec\end{code} class rather than randomly
+via a \begin{code}KeyGenerator\end{code}. Note however that
+secret information such as the key should \underline{never} in practice
+be stored in a \begin{code}String\end{code} (as any \begin{code}String\end{code}
+is immutable its contents cannot be changed after use).
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A simple class that demonstrates how RC4 encryption is achieved
+   using the Java Cryptography Architecture
+   @author Andrew Ensor
+*/
+...
+public class RC4Example
+{
+   public static void main(String[] args)
+   {  try
+      {  // create a secret key for RC4 (using bytes of "Secret")
+         // Note in practice information related to the key such as in
+         // the next line should NEVER be stored in a String
+         SecretKey key = new SecretKeySpec("Secret".getBytes(),
+            "ARCFOUR");
+         // create a cipher
+         Cipher cipher = Cipher.getInstance("ARCFOUR");
+         // obtain the plaintext
+         Scanner keyboardInput = new Scanner(System.in);
+         System.out.print("Please enter some plaintext:");
+         byte[] plaintext = keyboardInput.nextLine().getBytes();
+         // initialize cipher for encryption
+         cipher.init(Cipher.ENCRYPT_MODE, key);
+         // encrypt the plaintext and store in a List
+         CipherInputStream cis = new CipherInputStream
+            (new ByteArrayInputStream(plaintext), cipher);
+         List<Integer> ciphertext = new ArrayList<Integer>();
+         System.out.print("Ciphertext is:");
+         int unsignedByte = cis.read();
+         while (unsignedByte != -1)
+         {  ciphertext.add(unsignedByte);
+            System.out.print(Integer.toHexString(unsignedByte)+" ");
+            unsignedByte = cis.read();
+         }
+         System.out.println();
+         cis.close();
+         // initialize cipher for decryption
+         cipher.init(Cipher.DECRYPT_MODE, key);
+         // decrypt the ciphertext and store in ByteArrayOutputStream
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         CipherOutputStream cos = new CipherOutputStream(baos, cipher);
+         for (int data : ciphertext)
+            cos.write(data);
+         cos.close(); // don't just flush if using a block cipher
+         byte[] deciphertext = baos.toByteArray();
+         System.out.println("Deciphered is:"+new String(deciphertext));
+      }
+      ...
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+The .NET platform provides implementations of some common
+cipher algorithms in the 
+\begin{code}System.\\Security.Cryptography\end{code}
+namespace, including DES with the class \begin{code}DESCryptoServiceProvi-\\der\end{code},
+AES with the class \begin{code}RijndaelManaged\end{code}
+(a managed wrapper on top of the Windows CAPI service),
+and triple DES with the class \begin{code}TripleDESCryptoServiceProvider\end{code}.
+There is no block mode of encryption or decryption in C\#,
+all encryption is performed using streams with a \begin{code}CryptoStream\end{code}
+filtering stream, even when using a block cipher.
+When a \begin{code}CryptoStream\end{code} is created it is provided with an
+\begin{code}ICryptoTransform\end{code} obtained from the cipher
+that can either encrypt or else decrypt, and the \begin{code}CryptoStream\end{code}
+is created to either read from an input stream or else write to an output stream:
+\begin{quote}\begin{code}\begin{verbatim}
+Stream outputStream = ...;
+CryptoStream cs = new CryptoStream(outputStream,
+   cipher.CreateEncryptor(), CryptoStreamMode.Write);
+\end{verbatim}\end{code}\end{quote}
+The C\# class \begin{code}NETExample\end{code} demonstrates
+how AES encryption can be performed in C\#.
+This example creates a \begin{code}RijndaelManaged\end{code} (AES) cipher
+which itself generates a random 128-bit key and initialization vector.
+The key and initialization vector are held by the
+\begin{code}Key\end{code} and \begin{code}IV\end{code} properties of the cipher,
+and get stored in variables in the example so that they can be specified when
+the ciphertext is later decrypted.
+\begin{figure*}\begin{program}\begin{verbatim}
+/*
+   A C# class that demonstrates how AES encryption is achieved in .NET
+*/
+using System;
+using System.Collections;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+
+public class NETExample
+{
+   public static void Main(string[] args)
+   {  // create UTF8 encoder for converting user string to/from byte[]
+      UTF8Encoding encoder = new UTF8Encoding();
+      try
+      {  // create a cipher and have it generate a secret key
+         RijndaelManaged cipher = new RijndaelManaged();
+         byte[] key = cipher.Key;
+         byte[] initVector = cipher.IV;
+         // obtain the plaintext
+         Console.Write("Please enter some plaintext:");
+         byte[] plaintext = encoder.GetBytes(Console.ReadLine());
+         // encrypt the plaintext and store in a List
+         CryptoStream cis = new CryptoStream(
+            new MemoryStream(plaintext), cipher.CreateEncryptor(),
+            CryptoStreamMode.Read);
+         IList ciphertext = new ArrayList();
+         Console.WriteLine("Ciphertext is:");
+         int unsignedByte = cis.ReadByte();
+         while (unsignedByte != -1)
+         {  ciphertext.Add(unsignedByte);
+            Console.Write("{0:X} ",unsignedByte);
+            unsignedByte = cis.ReadByte();
+         }
+         Console.WriteLine();
+         cis.Close();
+         // decrypt the ciphertext and store in MemoryStream
+         MemoryStream ms = new MemoryStream(100);
+         CryptoStream cos = new CryptoStream(ms,
+            cipher.CreateDecryptor(key, initVector),
+            CryptoStreamMode.Write);
+         foreach (int data in ciphertext)
+            cos.WriteByte((byte)data);
+         cos.Close();
+         byte[] deciphertext = ms.GetBuffer();
+         Console.WriteLine("Deciphered is:"
+            + encoder.GetString(plaintext));
+      }
+      catch (CryptographicException e)
+      {  Console.WriteLine("Cryptographic exception: "+e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+\begin{exercise}[Implementation of RC4]
+Prepare a program that provides an implementation of the RC4 stream cipher
+(note that the \begin{code}\%\end{code} modulo operation only performs as
+expected for positive values, so before performing \begin{code}x \% 256\end{code}
+repeatedly add $256$ to \begin{code}x\end{code} to ensure that it is not negative).
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Secret Key Distribution                                                       %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Secret Key Distribution}\label{Se:SecretKeyDistribution}
+
+\reading{pp200-227}
+
+For a distributed computer system there are two common alternative approaches
+for encrypting messages to ensure their confidentiality in the network:
+\begin{description}
+  \item[link encryption] where every vulnerable communication link has an
+  encryption device at each end, encrypting each message before it gets
+  transmitted along the link and decrypting it at the other end,
+  \item[end-to-end encryption] where the sender of the message encrypts the
+  message and the destination decrypts it when it is received.
+\end{description}
+Link encryption might result in a message being encrypted and decrypted
+various times if it passes along several vulnerable links, however the
+encryption process is often performed by hardware devices which can help
+reduce transmission delays.
+These devices might also perform \defn{traffic padding}, transmitting
+random messages when the link is not being used to confuse attempts that try
+to deduce when the link is transmitting important messages.
+Besides the transmission delays another drawback to using link encryption
+is that it requires a large number of encryption devices
+covering every possible message path, which might be infeasible in a large network
+(such as the Internet). Also, if one of the devices could be compromised
+the plaintext messages could be obtained.
+End-to-end encryption would typically be performed either at the network layer
+(encrypting the contents of IP packets) or else at the application layer
+(by application software). This approach ensures that user messages
+are secure even across insecure links, but since the messages must be forwarded
+by routers around the network the sender and recipient of each message
+remain exposed.
+
+In practice a combination of both link encryption and end-to-end encryption is
+used to achieve greater security.
+If a symmetric cipher is employed in either approach then the encrypting end
+and the decrypting end must share a secret key. Each encrypting/decrypting
+pair should use its own key, so that if an attack successfully obtained one of the keys
+only one part of the network would be compromised.
+However, this creates the problem of how to distribute secret keys to each pair,
+which in a distributed system with $n$ processes could require a separate key
+for each of the $\frac{n(n-1)}{2}$ possible pairs of processes that might communicate
+with each other.
+
+Confidential information about a key must not be sent as unencrypted plaintext
+across a network so keys must be physically delivered to the relevant processes
+in some secure way. For link encryption this is a reasonable requirement as each
+encryption device only needs keys to perform encryption with its neighbouring
+devices, which could be provided when the communication link is installed.
+But for end-to-end encryption the physical distribution of all required keys
+become impractical given the possibly large number of processes with which a
+process might communicate, adding a new process to the system would require
+physical delivery of a new key to each of the existing processes,
+hindering the system's scalability.
+
+Instead of physically distributing each key required by a process,
+a large distributed system can have one or more distinguished processes known as
+a \defn{key distribution centre}. Each process is physically delivered a single
+secret \defn{master key} which it can use to encrypt/decrypt messages to/from the
+key distribution centre, which could be provided when the process is
+first added to the distributed system. Thus the key distribution centre is
+able to communicate securely with each process in the system
+using the correct master key for symmetric encryption with that process.
+More than one key distribution centre might be used to improve the reliability
+of the system in case one centre fails or is compromised.
+
+Rather than performing all secure communication via the key distribution centre,
+which would quickly become a bottleneck in the system, when a process wants to
+initiate secure communication with another process (receiver) it uses the following
+steps:
+\begin{enumerate}
+  \item
+    The initiator sends a request encrypted using its master key
+    to the key distribution centre asking for a
+    \defn{session key} for its communication with the receiver, including
+    a chosen \defn{nonce value} that is not easily predicted.
+\begin{center}
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Key Dist.}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{I}{K}
+    \rput(1,0.85){\tiny\begin{tabular}{c}secure\\request\end{tabular}}
+  \end{pspicture}\end{center}
+
+  \item
+    The key distribution centre sends an encrypted response back to the
+    initiator with a suitable session key for it to use,
+    as well as that session key and an identifier of the initiator encrypted using
+    the master key for the receiver.
+ \begin{center}
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Key Dist.}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{K}{I}
+    \rput(1.1,0.85){\tiny\begin{tabular}{c}secure\\reply\end{tabular}}
+  \end{pspicture}
+\end{center}
+ 
+  This information for the receiver can only be successfully
+  read by it but will be sent to it by the initiator to prove
+  the initiator's identity. The key distribution centre also includes the
+  same nonce in its response so that the initiator can match the response
+  with its request and be sure that the message was not a \defn{replay attack},
+  where an attacker has duplicated an earlier message
+  (in an attempt to disrupt operation of the system or compromise a key).
+
+  \item
+    The initiator forwards the encrypted information it obtained to the receiver
+    to request a secure connection with it.
+    Since this information was encrypted by the key distribution
+    centre for the receiver, only the receiver can decrypt it using its master key.
+ \begin{center}
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Key Dist.}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->]{I}{R}
+    \rput(2.5,0.45){\tiny\begin{tabular}{c}insecure request\end{tabular}}
+  \end{pspicture}
+\end{center}
+
+  \item
+    The receiver sends a secure response encrypted using the new session key
+    to acknowledge the request, including a nonce value that it chose and
+    asking the initiator to modify the nonce in some well-known way (such
+    as adding one to it so it changes).
+ \begin{center}
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Key Dist.}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{R}{I}
+    \rput(2.5,0.5){\tiny\begin{tabular}{c}secure reply\end{tabular}}
+  \end{pspicture}
+\end{center}
+
+  \item
+    The initiator acknowledges the response from the receiver by sending an
+    acknowledgement message encrypted using the session key and containing
+    the modified nonce.
+    Once the receiver obtains its nonce value modified it knows the connection request was genuine and not
+    just a replay attack on it.
+ \begin{center}
+ \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Key Dist.}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{I}{R}
+    \rput(2.5,0.5){\tiny\begin{tabular}{c}secure acknowledge\end{tabular}}
+  \end{pspicture}
+\end{center} 
+\end{enumerate}
+
+Note that a master key is only used by a process with the key distribution
+centre for securely requesting and transmitting new session keys, it is not
+used for encrypting large amounts of plaintext, which hinders potential attacks on
+a master key that rely on a large number of encrypted blocks.
+Session keys are used rather than master keys for all the encryption
+of information between processes in the distributed system.
+
+If there is a lot of communication between two processes they might
+periodically request a new session key from the key distribution centre
+so as to avoid using the same key for encrypting many plaintext blocks.
+If two processes already have secure communication a new
+session key can be arranged between them without having to involve
+the key distribution centre again.
+To ensure that a request by one process for a change in session key is genuine
+(and not a replay attack of a previous request),
+the initiator of the change can send a nonce value with its encrypted request.
+The other process sends an encrypted response containing the new suggested
+session key and a well-known modification to the nonce, along with its
+own nonce value. When the initiator receives the response it
+sends an encrypted acknowledgement with a well-known modification
+to the other's nonce value, proving that it was a genuine request.
+
+Secret keys for symmetric encryption and nonce values to foil replay attacks
+are typically generated using pseudo-random number generators.
+It is essential for good security that the sequence of values produced by a random number
+generator not be easily predicted by a third party. For instance, in 1995 it was announced
+that the SSL used by some popular browsers could be broken in minutes, not
+because of the encryption algorithms used by SSL but due to the predictable
+way the browsers generated random numbers.
+The \begin{code}java.util\end{code} class \begin{code}Random\end{code}
+uses a \defn{linear congruential} formula with a 48-bit seed to
+generate values $x_0, x_1, x_2, \dots$, which are given by the
+recurrence relation $x_{n+1}=\left(a x_n+c\right)\mbox{ mod }m$ for some
+carefully chosen values of $a$, $c$, and $m$.
+Although adequate for many purposes such techniques are not considered
+\defn{cryptographically strong}, not meeting guidelines for sufficiently unpredictable
+sequences of random numbers and possibly being vulnerable to cryptanalysis attacks.
+Hence, the \begin{code}java.security\end{code} package includes the
+\begin{code}SecureRandom\end{code} class which uses cryptographic
+algorithms to encrypt a seed and extract a pseudo-random number from the
+resulting ciphertext. A statement such as:
+\begin{quote}\begin{code}\begin{verbatim}
+SecureRandom generator = new SecureRandom();
+\end{verbatim}\end{code}\end{quote}
+uses a random number generator chosen by an available cryptographic security provider,
+whereas a statement such as:
+\begin{quote}\begin{code}\begin{verbatim}
+SecureRandom generator=SecureRandom.getInstance("SHA1PRNG");
+\end{verbatim}\end{code}\end{quote}
+specifies the particular cryptographic algorithm that should be used by the provider.
+The Java \begin{code}SecureRandom\end{code} class should always be used in place of
+\begin{code}Random\end{code} for generating confidential random numbers.
+
+It is usually impossible to rely on link encryption when using a mobile device
+for communication. Even if the telecommunication provider employs link encryption
+for communication within its own network HTTP requests still traverse the Web
+where link encryption is not usually used. Hence end-to-end encryption is
+particularly important. Android includes required support for HTTPS
+(discussed in Section \ref{Se:WebSecurity}) which is adequate for most
+mobile applications, but if a protocol such as SMS messaging is used instead of
+HTTP or the Web server receiving the HTTP request is not trusted by the application,
+then the application must provide its own encryption. Bouncy Castle is a very popular
+open-source Java package available from \url{http://www.bouncycastle.org/}
+that provides an alternative JCA cryptographic security provider.
+It provides implementations of all the main cryptographic algorithms
+as well as some newer algorithms. Android uses the JCE cryptographic API with the Bouncy Castle security provider,
+although older versions of Android have a fairly incomplete implementation of the
+Bouncy Castle API
+(so the Android-specific \defn{Spongy Castle Cryptography API} might instead be
+added as a more comprehensive cryptographic library for Android devices prior to version 4.0).
+The Eclipse project \begin{code}AndroidAESDemo\end{code} demonstrates an Android
+application that again encrypts SMS messages with AES encryption and CBC mode.
+The activity \begin{code}AndroidAESDemo\-Activity\end{code} encrypts the contents of
+each SMS message before it is sent, and encodes the resulting \begin{code}byte[]\end{code}
+as a \begin{code}String\end{code} using Base 64 encoding
+(discussed in Section \ref{Se:DigitalSignatures}) as Android only supports text content
+in SMS messages,
+whereas the broadcast receiver \begin{code}SMSBroadcastReceiver\end{code}
+decodes a \begin{code}String\end{code} SMS message back to a \begin{code}byte[]\end{code}
+and decrypts it to retrieve the plaintext message contents.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+ * Android Activity that sends SMS messages which it has encrypted
+ * using AES and Base64 encoded as a String
+ * Note this example uses a hard-coded secret key for simplicity
+ * @author Andrew Ensor
+ */
+package aut.hss;
+...
+public class AndroidAESDemoActivity extends Activity implements
+   OnClickListener
+{
+   private Button sendButton;
+   private SMSSentBroadcastReceiver sentBroadcastReceiver;
+   private SMSDeliveredBroadcastReceiver deliveredBroadcastReceiver;
+   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9,
+      -21, -6, -15, -95, 117, 36, -89 }; // the secret key
+   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9,
+      -10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
+   private SecretKeySpec key;
+   private IvParameterSpec initVector;
+   private final String SMS_SENT_ACTION = "SMS_SENT";
+   private final String SMS_DELIVERED_ACTION = "SMS_DELIVERED";
+
+   /** Called when the activity is first created. */
+   @Override
+   public void onCreate(Bundle savedInstanceState)
+   {  super.onCreate(savedInstanceState);
+      setContentView(R.layout.activity_main);
+      // obtain reference to send button
+      sendButton = (Button) findViewById(R.id.send_button);
+      sendButton.setOnClickListener(this);
+      key = new SecretKeySpec(keyBytes, "AES");
+      initVector = new IvParameterSpec(ivBytes);
+   }
+   ...
+   // implementation of OnClickListener method
+   public void onClick(View view)
+   {  if (view == sendButton)
+      {  TextView numberTextView
+            = (TextView)findViewById(R.id.number_text);
+         String numberString = numberTextView.getText().toString();
+         TextView messageTextView
+            = (TextView)findViewById(R.id.message_text);
+         String messageString = messageTextView.getText().toString();
+         // send the sms message
+         PendingIntent sentPendingIntent = PendingIntent.getBroadcast
+            (this, 0, new Intent(SMS_SENT_ACTION), 0);
+         PendingIntent deliveredPendingIntent
+            = PendingIntent.getBroadcast(this, 0,
+            new Intent(SMS_DELIVERED_ACTION), 0);
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+         SmsManager smsManager = SmsManager.getDefault();
+         String sendString = encryptAndEncodeString(messageString);
+         if (sendString != null)
+            smsManager.sendTextMessage(numberString, null, sendString,
+               sentPendingIntent, deliveredPendingIntent);
+      }
+   }
+
+   private String encryptAndEncodeString(String message)
+   {  String errorMessage = null;
+      try
+      {  // create a cipher
+         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+         // initialize cipher for encryption
+         cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+         // encrypt the plaintext
+         byte[] plaintext = message.getBytes();
+         byte[] ciphertext = cipher.doFinal(plaintext);
+         // base 64 encode the ciphertext as a string
+         String encodedString = Base64.encodeToString(ciphertext,
+            Base64.DEFAULT);
+         return encodedString;
+      }
+      ...
+      Toast toast = Toast.makeText(this, errorMessage,
+         Toast.LENGTH_SHORT);
+      toast.show();
+      return null;
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+ * BroadcastReceiver that is notified when an SMS message is received
+ * which it Base64 decodes and decrypts using AES with a hardcoded key
+ * Note this BroadcastReceiver is statically registered in
+ * AndroidManifest.xml and application requires permission
+ * android.permission.RECEIVE_SMS
+ * @see AndroidAESDemoActivity.java
+ */
+package aut.hss;
+...
+public class SMSBroadcastReceiver extends BroadcastReceiver
+{
+   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9,
+      -21, -6, -15, -95, 117, 36, -89 }; // the secret key
+   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9,
+      -10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
+   private SecretKeySpec key;
+   private IvParameterSpec initVector;
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   public SMSBroadcastReceiver()
+   {  key = new SecretKeySpec(keyBytes, "AES");
+      initVector = new IvParameterSpec(ivBytes);
+   }
+
+   public void onReceive(Context context, Intent intent)
+   {  // obtain the SMS message
+      Bundle bundle = intent.getExtras();
+      if (bundle != null)
+      {  Object[] pdus = (Object[]) bundle.get("pdus");
+         StringBuilder stringBuilder = new StringBuilder();
+         for (int i = 0; i < pdus.length; i++)
+         {  SmsMessage message = SmsMessage.createFromPdu
+               ((byte[]) pdus[i]);
+            String senderAddress
+               = message.getDisplayOriginatingAddress();
+            String receivedString = message.getDisplayMessageBody();
+            String messageString = decodeAndDecryptString(context,
+               receivedString);
+            stringBuilder.append("Received Encrypted SMS:\n");
+            stringBuilder.append("  Sender: ").append(senderAddress);
+            stringBuilder.append(" Message: ").append(messageString);
+            stringBuilder.append("\n");
+         }
+         Toast toast = Toast.makeText(context,
+            stringBuilder.toString(), Toast.LENGTH_SHORT);
+         toast.show();
+      }
+      else
+      {  Toast toast = Toast.makeText(context,
+            "Error: no message data received", Toast.LENGTH_SHORT);
+         toast.show();
+      }
+   }
+
+   private String decodeAndDecryptString(Context context,
+      String encodedString)
+   {  String errorMessage = null;
+      // base 64 decode the ciphertext as a byte[]
+      byte[] ciphertext = Base64.decode(encodedString, Base64.DEFAULT);
+      try
+      {  // create a cipher
+         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+         // initialize cipher for encryption
+         cipher.init(Cipher.DECRYPT_MODE, key, initVector);
+         // decrypt the ciphertext
+         byte[] deciphertext = cipher.doFinal(ciphertext);
+         return new String(deciphertext);
+      }
+      ...
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+\begin{exercise}[AES Encryption on a Mobile]
+Enhance one of the AES mobile examples so that the sender and receiver of SMS messages
+can themselves enter a string that is used to determine the 128-bit key for AES encryption
+and decryption.
+\end{exercise}

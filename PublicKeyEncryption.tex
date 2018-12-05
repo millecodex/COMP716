@@ -1,0 +1,1707 @@
+% This is the LaTeX file for the chapter:
+%   Public-Key Encryption
+% for the manual:
+%   Highly Secure Systems
+% Written by Andrew Ensor
+% Last updated 5 June 2006.
+
+\chapter{Public-Key Encryption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Modular Arithmetic                                                            %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Modular Arithmetic}
+
+\reading{pp235-253}
+
+Besides its importance for AES, the modular arithmetic operations in the ring
+$\mathbb{Z}_n$ have an important role in public-key encryption.
+Calculating an arithmetic expression modulo $n$ can be simplified by taking the modulo of
+each term before performing the arithmetic operations:
+\begin{eqnarray*}
+  (a+b)\mbox{ mod }n &=& ((a\mbox{ mod }n)+(b\mbox{ mod }n))\mbox{ mod }n \\
+  (a-b)\mbox{ mod }n &=& ((a\mbox{ mod }n)-(b\mbox{ mod }n))\mbox{ mod }n \\
+  (a\cdot b)\mbox{ mod }n &=& ((a\mbox{ mod }n)\cdot(b\mbox{ mod }n))\mbox{ mod }n.
+\end{eqnarray*}
+Prime numbers turn out to be very useful when performing modular arithmetic.
+The following fundamental result demonstrates the importance of prime numbers in number theory.
+
+\begin{theorem}{Unique Prime Factorization}
+Every integer $a>1$ can be factorized in a unique way as a product of prime numbers:
+\begin{displaymath}
+  a = p_1^{a_1} p_2^{a_2} \dots p_t^{a_t}
+\end{displaymath}
+where $p_1<p_2<\cdots<p_t$ are prime numbers and the exponents
+$a_1,a_2,\dots,a_t$ are positive integers.
+\end{theorem}
+
+For example:
+\begin{eqnarray*}
+  21600 &=& 2^5\cdot3^3\cdot5^2 \\
+  49000 &=& 2^3\cdot5^3\cdot7^2 \\
+  65535 &=& 3^1\cdot5^1\cdot17^1\cdot257^1 \\
+  65536 &=& 2^{16} \\
+  65537 &=& 65537^1 \qquad\mbox{ as $65537$ is itself prime}.
+\end{eqnarray*}
+
+As a consequence, if a prime $p$ divides a product $ab$ then it must be one of the primes
+in the factorization of the product $ab$ and thus also be a prime in the factorization
+of either $a$ or of $b$, so must divide either $a$ or $b$ (or both).
+
+\begin{theorem}{Fermat's Theorem}
+If $p$ is a prime number and $a$ is a positive integer not divisible by $p$ then
+$a^{p-1} \mbox{ mod } p = 1$.
+\end{theorem}
+
+As an example, $7$ is a prime number that does not divide $21600$ (as $7$ does not
+appear in its prime factorization). Hence $21600^6\mbox{ mod }7=1$.
+
+To see why Fermat's Theorem is true consider the numbers $1, 2, \dots, p-1$, multiply
+each number by $a$ and take the remainder modulo $p$ to get the set:
+\begin{displaymath}
+  \{a\mbox{ mod }p, 2a\mbox{ mod }p, \dots, (p-1)a\mbox{ mod }p\}.
+\end{displaymath}
+Note that none of the elements in this set are $0$, which can be
+seen by using a proof by contradiction (if $ia\mbox{ mod }p=0$
+for some $i$ with $1\leq i\leq p-1$ then $p$ divides $ia$, but $p$ does not
+divide $a$ so $p$ must divide $i$, which is not possible).
+Furthermore, all the elements of this set are distinct from each other,
+which can also be seen by using a proof by contradiction
+(if $ia\mbox{ mod }p = ja\mbox{ mod }p$  where
+$1\leq i<j\leq p-1$ then $p$ must divide $(j-i)a$,
+but as $a$ is not divisible by $p$, $p$ must be divide $j-i$,
+which is not possible as both $i<p$ and $j<p$).
+Hence this set is just a permutation of $\{1, 2, \dots, p-1\}$.
+Multiplying all the elements together therefore gives:
+\begin{eqnarray*}
+  (a\mbox{ mod }p)\cdot(2a\mbox{ mod }p)\cdot\dots\cdot((p-1)a\mbox{ mod }p)
+    &=& 1\cdot2\cdot\dots\cdot(p-1) \\
+  (a\cdot2a\cdot\dots\cdot(p-1)a)\mbox{ mod }p
+    &=& (p-1)!\mbox{ mod }p \\
+  a^{p-1} (p-1)!\mbox{ mod }p &=& (p-1)!\mbox{ mod }p
+\end{eqnarray*}
+So $p$ divides $(a^{p-1}-1)(p-1)!$. As $p$ does not divide $(p-1)!$ it must divide
+$a^{p-1}-1$ which verifies Fermat's Theorem.
+
+Now, if $p$ is an odd prime number then $p-1$ is even and so
+$p-1=2^k q$ for some $k\geq1$ and odd value of $q$.
+Hence for any $a<p$ Fermat's Theorem gives that $a^{2^k q}\mbox{ mod }p=1$.
+As a consequence since $p$ is prime, it can be shown that the values:
+\begin{displaymath}
+  a^q\mbox{ mod }p, a^{2q}\mbox{ mod }p, a^{2^2 q}\mbox{ mod }p,
+  a^{2^3 q}\mbox{ mod }p, \dots, a^{2^k q}\mbox{ mod }p=1
+\end{displaymath}
+where each term is the square of the previous modulo $p$,
+are either all $1$ or else one is equal to $-1\mbox{ mod }p=p-1$ and the next is $1$.
+Interestingly, for an odd value of $n$ that is not a prime
+if a random value of $a<n-1$ is chosen it has probability less than
+$\frac{1}{4}$ of satisfying this condition.
+This gives a simple $O(\log_2 n)$ technique for determining whether a number is
+\defn{probably prime} which can be much more efficient than the brute-force $O(\sqrt{n})$
+approach of checking whether any of the numbers
+$2, 3, \dots, \sqrt{n}$ divide $n$.
+If $\proc{Probably-Prime}(n)$ returns $\const{false}$ then $n$ is definitely
+not a prime, whereas if it returns $\const{true}$ then the probability
+that it is a prime is at least $\frac{3}{4}$.
+
+\begin{figure*}[htb]
+\begin{codebox}
+\Procname{$\proc{Probably-Prime}(n)$}
+\li \Comment determine whether the odd value of $n>2$ is probably a prime
+\li Find integers $k$ and $q$ for which $n-1=2^k q$
+\li \Comment pick a random integer between $2$ and $n-1$ exclusive to use in test
+\li $a \gets \proc{Random(2, $n-1$)}$
+\li $\id{current} \gets a^q\mbox{ mod }n$
+\li \If $\id{current}=1$ \Then
+\li    \Return \const{true} \`\Comment $n$ is probably a prime
+    \End
+\li \For $i \gets 1$ \To $k$ \Do
+\li    $\id{next} \gets \id{current}^2\mbox{ mod }n$
+\li    \If $\id{next}=1$ \Then
+\li       \If $\id{current}\neq n-1$ \Then
+\li          \Return \const{false} \`\Comment $n$ is definitely not a prime
+\li       \Else
+\li          \Return \const{true} \`\Comment $n$ is probably a prime
+          \End
+       \End
+\li    $\id{current}\gets\id{next}$
+    \End
+\li \Comment After end of loop it must be that $\id{current}\neq1$
+\li \Return \const{false} \`\Comment $n$ is definitely not a prime
+\end{codebox}
+\begin{codebox}
+\Procname{$\proc{Miller-Rabin}(n,s)$}
+\li \If $n=2$ \Then
+\li    \Return \const{true}
+\li  \ElseIf  $n\mbox{ mod }2=0$ \Then
+\li    \Return \const{false} \`\Comment $n$ is even
+    \End
+\li \Comment test whether $n$ is a prime $s$ times
+\li \For $j\gets1$ \To $s$ \Do
+\li    \If not $\proc{Probably-Prime}(n)$ \Then
+\li       \Return \const{false} \`\Comment $n$ is definitely not a prime
+       \End
+    \End
+\li \Return \const{true} \`\Comment $n$ is probably a prime with prob at least $1-\frac{1}{4^s}$
+\end{codebox}
+\end{figure*}
+The \defn{Miller-Rabin} algorithm simply repeatedly tests $\proc{Probably-Prime}(n)$
+$s$ times, and will mistakenly claim that an odd value of $n$ is a prime
+with probability less than $\frac{1}{4^s}$. Thus the algorithm can be
+used to determine with any desired probability whether a value of $n$ is a
+prime, simply by choosing a large enough value of $s$.
+In fact, if $n$ is a randomly chosen large number it can be shown that
+taking $s=3$ is very unlikely to lead to a false result
+(the non-prime \defn{Carmichael numbers} such as $561$, $1105$, $1729$
+do always get mistaken by the Miller-Rabin algorithm,
+but they are extremely rare with only 255 such numbers less than $100000000$).
+
+If $n$ is a positive integer then the \defn{Euler totient function} $\phi(n)$
+is the number of positive integers $m$ less than $n$ that are
+\defn{relatively prime} to $n$, meaning that $\mbox{gcd}(m,n)=1$.
+By convention one takes $\phi(1)=1$.
+
+\begin{figure*}[htb]\begin{center}
+\begin{tabular}{|r|r||r|r||r|r||r|r||r|r|} \hline
+  \multicolumn{10}{|l|}{\textit{Euler Totient Function for Small Values of $n$}} \\ \hline\hline
+  \textit{$n$} & \textit{$\phi(n)$} & \textit{$n$} & \textit{$\phi(n)$}
+  & \textit{$n$} & \textit{$\phi(n)$} & \textit{$n$} & \textit{$\phi(n)$}
+  & \textit{$n$} & \textit{$\phi(n)$} \\ \hline
+  1 & 1 & 2 & 1 & 3 & 2 & 4 & 2 & 5 & 4 \\
+  6 & 2 & 7 & 6 & 8 & 4 & 9 & 6 & 10 & 4 \\
+  11 & 10 & 12 & 4 & 13 & 12 & 14 & 6 & 15 & 8 \\
+  16 & 8 & 17 & 16 & 18 & 6 & 19 & 18 & 20 & 8 \\
+  21 & 12 & 22 & 10 & 23 & 22 & 24 & 8 & 25 & 20 \\
+  26 & 12 & 27 & 18 & 28 & 12 & 29 & 28 & 30 & 8 \\\hline
+\end{tabular}
+\end{center}\end{figure*}
+
+For example, to find $\phi(18)$ one lists the numbers $1$ to $17$ and removes
+those that are not relatively prime to $18$:
+\begin{displaymath}
+  \mathbf{1}, \mathit{2}, \mathit{3}, \mathit{4}, \mathbf{5}, \mathit{6},
+  \mathbf{7}, \mathit{8}, \mathit{9}, \mathit{10}, \mathbf{11}, \mathit{12},
+  \mathbf{13}, \mathit{14}, \mathit{15}, \mathit{16}, \mathbf{17}.
+\end{displaymath}
+Only $6$ numbers remain and so $\phi(18)=6$.
+
+If $p$ is a prime then clearly all positive integers less than $p$ are relatively
+prime to $p$ and so $\phi(p)=p-1$. Also, it is not difficult to show that
+if $p$ and $q$ are distinct primes then $\phi(pq)=(p-1)(q-1)$.
+Determining $\phi(n)$ for most other values of $n$ can be shown to be about as difficult
+as is determining the unique prime factorization of $n$, which is usually quite difficult
+for large values of $n$.
+
+The following result generalizes Fermat's Theorem for the case when arithmetic
+is taken modulo a value $n$ that might not be a prime. It can be proved in almost
+exactly the same way as Fermat's Theorem, but by starting with the $\phi(n)$ numbers
+that are relatively prime to $n$.
+
+\begin{theorem}{Euler's Theorem}
+  If $n$ and $a$ are positive integers that are relatively prime then
+  $a^{\phi(n)}\mbox{ mod }n = 1$.
+\end{theorem}
+
+For example, $18$ and $35$ are relatively prime as $\mbox{gcd}(18,35)=1$
+(this can also be seen as their prime factorizations have no primes in common).
+As $\phi(18)=6$ Euler's Theorem gives that $35^6\mbox{ mod }18=1$.
+
+The following result is also useful for performing modular arithmetic.
+It states that arithmetic in $\mathbb{Z}_n$ can be performed by using (simpler)
+arithmetic in $\mathbb{Z}_{n_i}$ for some relatively prime divisors $n_i$ of $n$.
+
+\begin{theorem}{Chinese Remainder Theorem}
+  Suppose $n=n_1n_2\dots n_k$ where $n_1, n_2, \dots, n_k$ are all relatively prime,
+  and define the function
+  $f\colon\mathbb{Z}_n\to\mathbb{Z}_{n_1}\times\mathbb{Z}_{n_2}\times\dots\times\mathbb{Z}_{n_k}$
+  by:
+  \begin{displaymath}
+    f(a) = \left( a\mbox{ mod }n_1, a\mbox{ mod }n_2, \dots, a\mbox{ mod }n_k \right).
+  \end{displaymath}
+  Then $f$ is a bijection for which:
+  \begin{eqnarray*}
+    f(a+b) &=& f(a)+f(b) \\
+    f(a-b) &=& f(a)-f(b) \\
+    f(a\cdot b) &=& f(a)\cdot f(b).
+  \end{eqnarray*}
+  where arithmetic in $\mathbb{Z}_n$ is taken modulo $n$ and in
+  $\mathbb{Z}_{n_1}\times\mathbb{Z}_{n_2}\times\dots\times\mathbb{Z}_{n_k}$ is taken
+  modulo $n_i$ in each coordinate.
+  The inverse $f^{-1}\colon
+  \mathbb{Z}_{n_1}\times\mathbb{Z}_{n_2}\times\dots\times\mathbb{Z}_{n_k}\to\mathbb{Z}_n$
+  is given by:
+  \begin{displaymath}
+    f^{-1}\left( a_1, a_2, \dots, a_k \right)
+    = \left( a_1c_1+a_2c_2+\cdots+a_kc_k \right)\mbox{ mod }n,
+  \end{displaymath}
+  where each $c_i=(n/n_i)\cdot d_i$
+  and $d_i$ is the value in $\mathbb{Z}_{n_i}$ for which
+  $(n/n_i)\cdot d_i\mbox{ mod }n_i=1$ ($d_i$ can be obtained by the Euclidean algorithm).
+\end{theorem}
+
+To illustrate the Chinese Remainder Theorem, suppose $a$ is a value for which
+$a\mbox{ mod }5=3$ and $a\mbox{ mod }12=7$. To determine the value of $a$
+(which is unique modulo $5\cdot12=60$) one approach would be to make a table of all values
+between $0$ and $59$ where the rows have the same remainder modulo $5$ and
+the columns have the same remainder $12$. Then the correct value of $a$
+can be read off the row with remainder $3$ and column with remainder $7$,
+giving $a=43$.
+\begin{figure*}[htb]\begin{center}
+\begin{tabular}{|c||rrrrrrrrrrrr|} \hline
+  \multicolumn{13}{|l|}{\textit{Values of $a$ between $0$ and $59$
+    with remainders modulo $5$ and modulo $12$}} \\ \hline\hline
+  \textit{Remainders} & \textit{$0$} & \textit{$1$} & \textit{$2$} & \textit{$3$}
+  & \textit{$4$} & \textit{$5$} & \textit{$6$} & \textit{$7$}
+  & \textit{$8$} & \textit{$9$} & \textit{$10$} & \textit{$11$} \\ \hline\hline
+  \textit{$0$} & 0 & 25 & 50 & 15 & 40 & 5 & 30 & 55 & 20 & 45 & 10 & 35 \\
+  \textit{$1$} & 36 & 1 & 26 & 51 & 16 & 41 & 6 & 31 & 56 & 21 & 46 & 11 \\
+  \textit{$2$} & 12 & 37 & 2 & 27 & 52 & 17 & 42 & 7 & 32 & 57 & 22 & 47 \\
+  \textit{$3$} & 48 & 13 & 38 & 3 & 28 & 53 & 18 & 43 & 8 & 33 & 58 & 23 \\
+  \textit{$4$} & 24 & 49 & 14 & 39 & 4 & 29 & 54 & 19 & 44 & 9 & 34 & 59 \\\hline
+\end{tabular}\end{center}
+\end{figure*}
+Alternatively, as $n_1=5$ and $n_2=12$ are relatively prime the Chinese Remainder Theorem
+can be used to find $a=f^{-1}(3,7)$. Let $n=n_1\cdot n_2=60$,
+so that $n/n_1=12$ and $n/n_2=5$. Then $d_1$ is the value for which
+$12\cdot d_1\mbox{ mod }5=1$, which by the Euclidean algorithm can be found to be
+$d_1=3$. Similarly, $d_2$ is the value for which $5\cdot d_2\mbox{ mod }12=1$,
+which is $d_2=5$. Then $c_1=(n/n_1)\cdot d_1=12\cdot3=36$ and
+$c_2=(n/n_2)\cdot d_2=5\cdot5=25$.
+Now any value of $f^{-1}(a_1,a_2)$ can be found, such as
+$a=f^{-1}(3,7)=(3\cdot36+7\cdot25)\mbox{ mod }60=43$.
+
+
+\begin{exercise}[Random Prime Generator]
+  Prepare a program that can generate a cryptographically strong large random prime number
+  (for a very large number you might like to make use of the
+  \begin{code}BigInteger\end{code} class that is in the \begin{code}java.math\end{code}
+  package).
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% RSA Algorithm                                                                 %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{RSA Algorithm}\label{Se:RSAAlgorithm}
+
+\reading{pp258-280}
+
+The concept of public-key cryptography was introduced as a way to
+distribute secret keys without resorting to physical distribution,
+and as a way to authenticate the sender of a message.
+Public-key cryptography uses two keys, a \defn{public key} which is
+usually publicly available and a \defn{private key} which must
+be kept confidential. Encrypting plaintext using one of the keys
+results in ciphertext which should only be able to be decrypted
+with the other key. Hence the holder of the private key should be the
+only one that can decrypt messages encoded by anyone using the public key,
+enabling others to encrypt messages that they send to the holder.
+The holder should also be the only one that can encrypt messages that
+get decrypted by anyone using the public key, enabling others
+to authenticate that a message was produced by the holder
+(provided they are certain of the origin of the public key).
+
+One of the first public-key ciphers and currently the most-popular
+public key block cipher
+was developed by Rivest, Shamir, Adleman and known as the \defn{RSA algorithm}.
+The public and private keys are calculated with the following steps:
+\begin{enumerate}
+  \item two large prime numbers $p$ and $q$ are selected at random,
+  typically each at least 512 bits,
+  \item the product $n=pq$ is calculated, allowing encryption
+  of any plaintext block whose value is in $\mathbb{Z}_n$
+  (typically at least 1024 bits),
+  \item a small odd integer $e$ that is relatively prime to
+  $\phi(n)=(p-1)(q-1)$ is selected, a common choice is $e=65537$ so long
+  as $\mbox{gcd}(\phi(n),e)=1$,
+  \item the multiplicative inverse $d$ of $e$ in $\mathbb{Z}_{\phi(n)}$ is calculated
+  using the Euclidean algorithm (which is the value $s$ calculated by
+  $\proc{Extended-Euclid}(e, \phi(n))$),
+  \item the public key is the pair $(e, n)$ which is published,
+  \item the private key is the pair $(d, n)$ which is kept secret.
+\end{enumerate}
+\begin{figure*}[htb]
+\begin{codebox}
+\Procname{$\proc{Extended-Euclid}(m,n)$}
+\li \Comment determine $d=\mbox{gcd}(m,n)$ and $s$, $t$ for which
+   $\mbox{gcd}(m,n)=s\cdot m+t\cdot n$
+\li \If $n=0$ \Then
+\li    \Return $(m, 1, 0)$
+    \End
+\li $(d^\prime, s^\prime, t^\prime) \gets \proc{Extended-Euclid}(n,m\mbox{ mod }n)$
+\li $q \gets \lfloor m/n\rfloor$ \`\Comment integer division $m/n$
+\li $(d, s, t) \gets (d^\prime, t^\prime, s^\prime - q t^\prime)$
+\li \Return $(d, s, t)$
+\end{codebox}
+\end{figure*}
+
+A plaintext block $P$ is considered a value in $\mathbb{Z}_n$.
+Encryption of $P$ using the public key into a ciphertext value $C$ is given by:
+\begin{displaymath}
+  C = P^e\mbox{ mod }n,
+\end{displaymath}
+whereas for authentication the private key $d$ would instead be used for encryption.
+Decryption is then achieved by the same technique but with the other key:
+\begin{displaymath}
+  P = C^d\mbox{ mod }n.
+\end{displaymath}
+To verify that encryption and decryption are indeed inverse operations, it must be
+shown that $\left(P^e\mbox{ mod }n\right)^d\mbox{ mod }n=P$
+for any possible value $P$ in $\mathbb{Z}_n$.
+Note that $ed\mbox{ mod }\phi(n)=1$ and $\phi(n)=(p-1)(q-1)$ as $p$ and $q$ are
+both primes, so that $ed=1+k(p-1)(q-1)$ for some multiple $k$. Thus:
+\begin{displaymath}
+  \left(P^e\mbox{ mod }n\right)^d\mbox{ mod }n
+  = P^{ed}\mbox{ mod }n
+  = P^{1+k(p-1)(q-1)}\mbox{ mod }n.
+\end{displaymath}
+Now, if $P$ is not divisible by $p$ then $P^{p-1}\mbox{ mod }p=1$ by Fermat's Theorem, so:
+\begin{eqnarray*}
+  P^{1+k(p-1)(q-1)}\mbox{ mod }p
+  &=& P\cdot\left(P^{p-1}\right)^{k(q-1)}\mbox{ mod }p \\
+  &=& P\cdot\left(1\right)^{k(q-1)}\mbox{ mod }p \\
+  &=& P\mbox{ mod }p.
+\end{eqnarray*}
+If instead $P$ is divisible by $p$ then too $P^{1+k(p-1)(q-1)}\mbox{ mod }p=0=P\mbox{ mod }p$.
+Similarly, $P^{1+k(p-1)(q-1)}\mbox{ mod }q=P\mbox{ mod }q$, so the Chinese Remainder Theorem
+can be applied to show that $P^{1+k(p-1)(q-1)}\mbox{ mod }n=P\mbox{ mod }n$.
+This verifies that RSA decryption is the reverse of RSA encryption.
+
+The exponentiation operations $P^e$ and $C^d$ used in encryption and decryption
+can be performed in $\Theta(\log_2 e)$ and $\Theta(\log_2 d)$ respectively.
+For instance $P^e\mbox{ mod }n$ can be found by calculating:
+\begin{displaymath}
+  P, P^2\mbox{ mod }n, P^4\mbox{ mod }n, P^8\mbox{ mod }n, P^{16}\mbox{ mod }n, \dots
+\end{displaymath}
+where each term is the square modulo $n$ of the previous term.
+The algorithm $\proc{Modular}$-$\proc{Exponentiation}$ demonstrates how this can be achieved
+using the binary representation of an exponent $b$.
+For example, if $b=22$ which has binary representation $10110$, then
+after the first iteration of the loop $b_4=1$ and so $t=a\cdot1=a$.
+During the next iteration $b_3=0$ and so $t$ is just squared giving
+$t=a^2$. During the third iteration $b_2=1$ and so
+$t$ is squared and then multiplied by $a$ giving $t=a^5$.
+During the fourth iteration $b_1=1$ and so $t$ is again squared and
+multiplied by $a$, resulting in $t=a^{11}$. In the final iteration
+$b_0=0$ and so the result is just squared, giving $t=a^{22}$.
+\begin{figure*}[htb]
+\begin{codebox}
+\Procname{$\proc{Modular-Exponentiation}(a,b,n)$}
+\li \Comment determine $a^b\mbox{ mod }n$ in order $\Theta(\log_2 b)$
+       where $b=b_{k-1} b_{k-2}\dots b_0$ in binary
+\li $t \gets 1$
+\li \For $i\gets k\!-\!1$ \Downto $0$ \Do
+\li    $t \gets t\times t\mbox{ mod }n$
+\li    \If $b_i=1$ \Then
+\li       $t \gets (t\times a)\mbox{ mod }n$
+       \End
+    \End
+\li \Return $t$
+\end{codebox}
+\end{figure*}
+Actually, since the exponent $d$ is probably very large a more efficient
+way of calculating $C^d$ during decryption can be advantageous.
+Using Fermat's Theorem, $C^d\mbox{ mod }p=C^{d\mbox{ \scriptsize mod }(p-1)}\mbox{ mod }p$
+and $C^d\mbox{ mod }q=C^{d\mbox{ \scriptsize mod }(q-1)}\mbox{ mod }q$.
+So $C^d\mbox{ mod }p$ and $C^d\mbox{ mod }q$ can be found relatively quickly.
+Then as $n=pq$ and $p$ and $q$ are relatively prime,
+the Chinese Remainder Theorem can be applied to obtain $C^d\mbox{ mod }n$.
+This way is about four times faster than simply using $\proc{Modular-Exponentiation}$
+to calculate $C^d\mbox{ mod }n$.
+
+It may appear surprising that $n$ can be included as part of the public key,
+as if a cryptanalyst were to find the primes $p$ and $q$ with $n=pq$, or even just
+calculate $\phi(n)$ then the private key would be obtained.
+However, obtaining the prime factorization for large values of $n$ is well-known
+to be difficult, with no efficient algorithm yet discovered.
+Also, it has been shown that calculating $\phi(n)$ is equivalent to
+factorizing $n=pq$.
+Hence the security of the RSA algorithm is based on the difficulty
+of factorizing a sufficiently large value of $n$.
+
+Cryptanalysis attacks on RSA based on factorizing $n$ have improved since the
+release of RSA. When RSA was first published in 1977 a challenge was made
+to break a particular ciphertext encrypted using a 428 bit value for $n$,
+which at the time was presumed would take 40 quadrillion years by brute force.
+But in 1994, after only eight months work the ciphertext was successfully
+broken, and since then factorization techniques have improved substantially,
+so that by 2005 a 663 bit value of $n$ was no longer considered secure.
+Hence larger values (currently between 1024 bit and 2048 bit) are now used for
+RSA encryption. However, the drawback is that encryption and decryption
+calculations are longer, slowing the algorithm.
+
+There are several other interesting cryptanalysis attacks on RSA.
+If a particularly small value of $e$ is chosen and if the same plaintext is encrypted
+for that number of users each with different values of $n$ then the plaintext
+can be easily obtained. For instance, if $e=3$ (which was once commonly used)
+and the same plaintext $P$ is encrypted with $n_1$, $n_2$, $n_3$ and intercepted by a
+cryptanalyst, then the values
+$P^3\mbox{ mod }n_1$, $P^3\mbox{ mod }n_1$, $P^3\mbox{ mod }n_1$
+are obtained. As $n_1$, $n_2$, $n_3$ are probably relatively prime
+with each other, the Chinese Remainder Theorem can then be used to obtain
+$P^3\mbox{ mod }n_1n_2n_3$. But $P<n_1$, $P<n_2$, $P<n_3$, so $P^3$
+has been found. Taking its cube root then gives the original plaintext $P$.
+
+Another approach that demonstrates the ingenuity of cryptanalysis attacks
+is known as a \defn{timing attack}, which relies on the time taken by an
+algorithm such as RSA to decrypt ciphertext.
+As the time taken by each iteration of the $\proc{Modular-Exponentiation}$
+algorithm depends on whether the bit $d_i$ of the private key $d$ is $0$
+or $1$, by carefully choosing ciphertext, a cryptanalyst can
+determine bit by bit the value of $d$. To foil a timing attack,
+RSA algorithms usually include \defn{blinding}, where a secret random number
+$r$ is chosen, encrypted and multiplied by the ciphertext $C$ before it
+gets decrypted. This ensures that the ciphertext actually being decrypted is not
+known to the cryptanalyst. The decrypted result is then multiplied by
+the multiplicative inverse of $r$ in $\mathbb{Z}_n$ to give the original
+plaintext.
+
+RSA has further properties that can be exploited by a cryptanalyst.
+It is easily seen that the ciphertext for $P_1\cdot P_2$ is the same
+as the product of the ciphertext for $P_1$ with the ciphertext for $P_2$.
+As a consequence, if a cryptanalyst intercepts a ciphertext $C$ and
+is then allowed to obtain the plaintext for certain chosen ciphertext, then
+the plaintext for the intercepted ciphertext $C$ can be quickly obtained.
+To counter this attack, RSA algorithms use \defn{optimal asymmetric encryption padding}
+(OAEP) where all plaintext are randomly padded before they get encrypted.
+
+Due to the length of the key needed to ensure security of RSA, and the resulting
+long calculations, RSA is not nearly as efficient as symmetric cipher algorithms
+such as AES for encrypting and decrypting large quantities of data.
+For this reason RSA is typically used only for the initial exchange of a
+secret key after which a symmetric cipher is used for further encryption and
+decryption.
+
+The class \begin{code}RSADecrypter\end{code} demonstrates how a pair
+of keys can be generated in Java using the \begin{code}KeyPairGenerator\end{code}
+class:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+kpg.initialize(1024); // size of key in bits
+KeyPair keyPair = kpg.generateKeyPair();
+PublicKey publicKey = keyPair.getPublic();
+PrivateKey privateKey = keyPair.getPrivate();
+\end{verbatim}\end{code}\end{quote}
+From the two keys their modulus $n$ and exponent $e$ or $d$ can be obtained
+by typecasting them to \begin{code}RSAPublicKey\end{code} and
+\begin{code}RSAPrivateKey\end{code} respectively.
+Once the key pair has been generated the example sends the public key
+via a TCP socket connection to another class called \begin{code}RSAEncrypter\end{code}
+(either a Java or a C\# class) that is listening for socket connections.
+The \begin{code}RSAEncrypter\end{code} obtains the modulus $n$ and the public
+exponent $e$ and uses them to encrypt a short plaintext using RSA.
+The encrypted ciphertext is then passed back to \begin{code}RSADecrypter\end{code}
+where it is decrypted using the private key.
+In a more-realistic application this plaintext might typically be a secret key
+for symmetric encryption, and the public key would be passed using a standard format
+such as the X.509 standard (discussed in Section \ref{Se:CertificatesKeyStorage}).
+Furthermore, this example does not use OAEP which is supported in both Java and C\#.
+
+RSA encryption is performed in C\# using the \begin{code}RSACryptoServiceProvider\end{code}
+class (instead of the usual C\# \begin{code}CipherStream\end{code}).
+Note if a key of length exactly a power of two is used then the
+\begin{code}RSACryptoServiceProvider\end{code} cipher appears to add an
+extra byte to the encrypted ciphertext, which is inconsistent
+with the length of the key,
+resulting in a \begin{code}BadPaddingException\end{code} in \begin{code}RSADecrypter\end{code}.
+This small incompatibility can be avoided by not using keys of lengths
+exactly 512 or 1024 in the C\# version.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates how RSA encryption can be used to obtain
+   RSA encrypted information from an RSAEncrypter server.
+   To run first start RSAEncrypter.
+   @author Andrew Ensor
+*/
+...
+public class RSADecrypter
+{
+   public static final String HOST_NAME = "localhost";
+   public static final int HOST_PORT = 8888; // host port number
+   private KeyPair keyPair;
+
+   public RSADecrypter()
+   {  // generate an RSA public and private key pair
+      try
+      {  KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+         kpg.initialize(1024); // size of key in bits
+         keyPair = kpg.generateKeyPair();
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+   }
+
+   private void obtainBytes()
+   {  // open TCP connection to RSAEncrypter server on specified port
+      Socket socket = null;
+      OutputStream os = null;
+      InputStream is = null;
+      try
+      {  socket = new Socket(HOST_NAME, HOST_PORT);
+         os = socket.getOutputStream();
+         // send the public key modulus and public exponent to host
+         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+         System.out.println("Sending public key");
+         byte[] modulus = publicKey.getModulus().toByteArray();
+         byte[] exponent = publicKey.getPublicExponent().toByteArray();
+         os.write(modulus.length); // write number of bytes in modulus
+         os.write(modulus);
+         os.write(exponent.length);//write number of bytes in exponent
+         os.write(exponent);
+         os.flush();
+         // obtain the encrypted bytes
+         is = socket.getInputStream();
+         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         int data = is.read();
+         while (data != -1) // end of stream encountered
+         {  baos.write(data);
+            data = is.read();
+         }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+         byte[] ciphertext = baos.toByteArray();
+         // decrypt the bytes using the private key
+         PrivateKey privateKey = keyPair.getPrivate();
+         Cipher cipher = Cipher.getInstance("RSA");
+         cipher.init(Cipher.DECRYPT_MODE, privateKey);
+         byte[] plaintext = cipher.doFinal(ciphertext);
+         // display the plaintext
+         System.out.print("Deciphered plaintext:");
+         for (int i=0; i<plaintext.length; i++)
+           System.out.print(" " + plaintext[i]);
+         System.out.println();
+      }
+      catch (IOException e)
+      {  System.err.println("IOException in decrypter: " + e);
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+      catch (NoSuchPaddingException e)
+      {  System.err.println("Padding scheme not available: " + e);
+      }
+      catch (InvalidKeyException e)
+      {  System.err.println("Invalid key: " + e);
+      }
+      catch (IllegalBlockSizeException e)
+      {  System.err.println("Cannot pad plaintext: " + e);
+      }
+      catch (BadPaddingException e)
+      {  System.err.println("Exception with padding: " + e);
+      }
+      finally
+      {  try
+         {  if (os != null) os.close();
+            if (is != null) is.close();
+            if (socket != null) socket.close();
+         }
+         catch (IOException e)
+         {  System.err.println("Failed to close streams: " + e);
+         }
+      }
+   }
+
+   public static void main(String[] args)
+   {  RSADecrypter decrypter = new RSADecrypter();
+      decrypter.obtainBytes();
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates how RSA encryption can be used to encrypt
+   RSA encrypted information to an RSADecrypter client
+   @see RSADecrypter.java
+*/
+...
+public class RSAEncrypter
+{
+   public static final int PORT = 8888; // some unused port number
+   private final byte[] plaintext = {1, 2, 3, 4, 5, 6, 7}; // secret
+   ...
+   // inner class that represents a single connection handler
+   private class ConnectionHandler implements Runnable
+   {
+      private Socket socket; // socket for client/server communication
+
+      public ConnectionHandler(Socket socket)
+      {  this.socket = socket;
+      }
+
+      public void run()
+      {  // handle the TCP connection with an RSADecrypter client
+         InputStream is = null;
+         OutputStream os = null;
+         try
+         {  // obtain public key modulus and public exponent from client
+            is = socket.getInputStream();
+            int modulusLength = is.read(); // get num bytes in modulus
+            byte[] modulus = new byte[modulusLength];
+            for (int i=0; i<modulusLength; i++)
+               modulus[i] = (byte)is.read();
+            int exponentLength = is.read();//get num bytes in exponent
+            byte[] exponent = new byte[exponentLength];
+            for (int i=0; i<exponentLength; i++)
+               exponent[i] = (byte)is.read();
+            RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec
+               (new BigInteger(modulus), new BigInteger(exponent));
+            // create public key from the modulus and public exponent
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey
+               = keyFactory.generatePublic(publicKeySpec);
+            // use the public key to encrypt the information
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            byte[] ciphertext = cipher.doFinal(plaintext);
+            // send the encrypted bytes
+            os = socket.getOutputStream();
+            os.write(ciphertext);
+         }
+         ...
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/*
+   A C# class that demonstrates how RSA encryption can be used to
+   obtain RSA encrypted information from an RSAEncrypter server.
+   Note this example presumes that the modulus length can be
+   represented as a byte (an int would be preferable but then the
+   endian order needs to be considered), and that the modulus is a
+   positive integer in twos-complement notation (so most significant
+   bit is zero).
+*/
+...
+public class RSADecrypter
+{
+   public const String HOST_NAME = "localhost";
+   public const int HOST_PORT = 8888; // host port number
+   private RSAParameters keyPair;
+
+   public RSADecrypter()
+   {  // generate an RSA public and private key pair using 1024 bit key
+      RSACryptoServiceProvider cipher
+         = new RSACryptoServiceProvider(1024);
+      keyPair = cipher.ExportParameters(true);
+   }
+
+   private void ObtainBytes()
+   {  // open TCP connection to RSAEncrypter server on specified port
+      TcpClient client = null;
+      try
+      {  client = new TcpClient();
+         client.Connect(HOST_NAME, HOST_PORT);
+      }
+      catch (SocketException e)
+      {  Console.WriteLine("Client could not make connection: " + e);
+         System.Environment.Exit(System.Environment.ExitCode);
+      }
+      NetworkStream stream = null;
+      BinaryWriter bw = null;
+      BinaryReader br = null;
+      try
+      {  stream = client.GetStream();
+         bw = new BinaryWriter(stream);
+         // send the public key modulus and public exponent to host
+         Console.WriteLine("Sending public key");
+         byte[] modulus = keyPair.Modulus;
+         byte[] exponent = keyPair.Exponent;
+         if ((modulus[0] & 0x80) != 0)
+         {  // modulus needs a 00 prepended to put into twos complement
+            byte[] twosComplement = new byte[modulus.Length+1];
+            twosComplement[0] = 0;
+            Array.Copy(modulus, 0, twosComplement, 1, modulus.Length);
+            modulus = twosComplement;
+         }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+         bw.Write((byte)modulus.Length); // write num of modulus bytes
+         bw.Write(modulus);
+         bw.Write((byte)exponent.Length);//write num of exponent bytes
+         bw.Write(exponent);
+         bw.Flush();
+         // obtain the encrypted bytes
+         br = new BinaryReader(stream);
+         MemoryStream memoryStream = new MemoryStream();
+         BinaryWriter msbw = new BinaryWriter(memoryStream);
+         byte[] data = br.ReadBytes(0);
+         while (data.Length>0) // end of stream encountered
+         {  msbw.Write(data);
+            data = br.ReadBytes(0);
+         }
+         stream.CopyTo(memoryStream);
+         byte[] ciphertext = memoryStream.ToArray();
+         // decrypt the bytes using private key without OAEP padding
+         RSACryptoServiceProvider cipher
+            = new RSACryptoServiceProvider();
+         cipher.ImportParameters(keyPair);
+         byte[] plaintext = cipher.Decrypt(ciphertext, true);
+         // display the plaintext
+         Console.Write("Deciphered plaintext:");
+         for (int i=0; i<plaintext.Length; i++)
+            Console.Write(" " + plaintext[i]);
+         Console.WriteLine();
+         cipher.Dispose();
+
+      }
+      catch (SocketException e)
+      {  Console.WriteLine("Client error: " + e);
+      }
+      finally
+      {  try
+         {  if (br != null) br.Close();
+            if (bw != null) bw.Close();
+            if (stream != null) stream.Close();
+            if (client != null) client.Close();
+         }
+         catch (SocketException e)
+         {  Console.WriteLine("Failed to close streams: " + e);
+         }
+      }
+   }
+
+   public static void Main(string[] args)
+   {  RSADecrypter decrypter = new RSADecrypter();
+      decrypter.ObtainBytes();
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/*
+   A C# class that demonstrates how RSA encryption can be used in .NET
+   to encrypt RSA encrypted information to an RSADecrypter client.
+*/
+...
+public class RSAEncrypter
+{
+   ...
+   // inner class that represents a single connection handler
+   private class ConnectionHandler
+   {
+      ...
+      public void Run() // can call this method anything in C#
+      {  // handle the TCP connection with an RSADecrypter client
+         NetworkStream stream = new NetworkStream(socket);
+         BinaryReader br = null;
+         BinaryWriter bw = null;
+         try
+         {  // obtain public key modulus and public expon from client
+            br = new BinaryReader(stream);
+            int modulusLength=br.ReadByte();//get num bytes in modulus
+            byte[] modulus = new byte[modulusLength];
+            for (int i=0; i<modulusLength; i++)
+               modulus[i] = br.ReadByte();
+            if (modulus[0] == 0)
+            {  // an additional 00 byte has probably been appended
+               // to make modulus twos complement
+               byte[] unsigned = new byte[modulus.Length-1];
+               Array.Copy(modulus, 1, unsigned, 0, modulus.Length-1);
+               modulus = unsigned;
+            }
+            int exponentLength=br.ReadByte();//get num bytes in expon
+            byte[] exponent = new byte[exponentLength];
+            for (int i=0; i<exponentLength; i++)
+               exponent[i] = br.ReadByte();
+            RSAParameters publicKeySpec = new RSAParameters();
+            publicKeySpec.Modulus = modulus;
+            publicKeySpec.Exponent = exponent;
+            // create public key from the modulus and public exponent
+            RSACryptoServiceProvider cipher
+               = new RSACryptoServiceProvider();
+            cipher.ImportParameters(publicKeySpec);
+            // use the public key to encrypt info without OAEP padding
+            byte[] ciphertext = cipher.Encrypt(plaintext, true);
+            // send the encrypted bytes
+            bw = new BinaryWriter(stream);
+            bw.Write(ciphertext);
+            cipher.Dispose();
+         }
+         ...
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+\begin{exercise}[Implementation of RSA]
+Prepare a program that provides an implementation of the RSA public-key block cipher.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Key Exchange                                                                  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Key Exchange}
+
+\reading{pp290-301}
+
+The performance of public-key encryption algorithms
+can be up to 1000 times slower than symmetric encryption,
+which limits their suitability to the exchange of
+brief messages such as secret keys for symmetric encryption.
+The classes \begin{code}RSADecrypter\end{code} and
+\begin{code}RSAEncrypter\end{code} from Section \ref{Se:RSAAlgorithm}
+demonstrate how an asymmetric cipher such as RSA can be used to pass a
+secret key safely encrypted between two processes, which can then be
+used for the encryption of further messages.
+
+The \defn{Diffie-Hellman key exchange} algorithm was the first published
+public-key algorithm and was devised so that two processes could
+use insecure communication to determine a common secret key.
+This algorithm starts with two public values that are pre-computed,
+a large prime $p$ and an integer value $a$ with $1<a<p$ for which:
+\begin{displaymath}
+  a, a^2\mbox{ mod }p, a^3\mbox{ mod }p, \dots, a^{p-1}\mbox{ mod }p=1.
+\end{displaymath}
+are all distinct (so they must just be a permutation of $\{1,2,3,\dots, p-1\}$)
+in which case $a$ is called a \defn{primitive root} of $p$.
+Once a primitive root $a$ of a prime $p$ has been found,
+for any integer $b$ there is a unique power $i<p$
+for which $b\mbox{ mod }p=a^i\mbox{ mod }p$, and $i$ is
+called the \defn{discrete logarithm} or \defn{index} of $b$ modulo $p$ for
+the base $a$.
+
+For example, taking $p=7$ the value $a=2$ is not a primitive root of $7$ since in
+$\mathbb{Z}_7$ one has:
+\begin{displaymath}
+  2^1=2, 2^2=4, 2^3=1, 2^4=2, 2^5=4, 2^6=1,
+\end{displaymath}
+which are not all distinct, whereas the value $a=3$ is a primitive root as:
+\begin{displaymath}
+  3^1=3, 3^2=2, 3^3=6, 3^4=4, 3^5=5, 3^6=1,
+\end{displaymath}
+which are all distinct.
+Thus the discrete logarithm of an integer such as $b=1763$ modulo $p=7$ for the
+base $a=3$ is found by $b\mbox{ mod }7=6=3^3$, and so $i=3$.
+
+The security of the Diffie-Hellman key exchange relies on the
+difficulty of computing discrete logarithms for large primes $p$,
+much as RSA relies on the difficulty of computing prime
+factorizations for large integers $n$. When two processes with the
+same base $a$ and prime $p$ want to exchange a secret key each
+selects its own secure random number $x<p$ as its private key and
+calculates a public key $y=a^x\mbox{ mod }p$, which is
+communicated to the other process. When each process receives the
+public key $y^\prime=a^{x^\prime}\mbox{ mod }p$ of the other
+process (but not knowing the other private key $x^\prime$), it
+calculates the secret key $K$:
+\begin{displaymath}
+  K = \left(y^\prime\right)^x\mbox{ mod }p.
+\end{displaymath}
+Note that this is the same key as that calculated by the other process as:
+\begin{eqnarray*}
+  \left(y^\prime\right)^x\mbox{ mod }p
+  &=& \left(a^{x^\prime}\mbox{ mod }p\right)^x\mbox{ mod }p \\
+  &=& a^{x\cdot x^\prime}\mbox{ mod }p \\
+  &=& \left(a^x\mbox{ mod }p\right)^{x^\prime}\mbox{ mod }p \\
+  &=& y^{x^\prime}\mbox{ mod }p,
+\end{eqnarray*}
+but a cryptanalyst cannot calculate $K$ without knowing one of the values $x$ or $x^\prime$.
+Obtaining these values would require calculating the discrete logarithm of
+an intercepted $y$ or $y^\prime$ value modulo $p$ to the base $a$, which is
+computationally difficult.
+
+JCA supports Diffie-Hellman key exchange using the algorithm name \begin{code}DH\end{code}
+and the following steps:
+\begin{description}
+  \item[Generate the Public Prime and Primitive Root]
+  New values of $p$ and $a$ can be generated for a Diffie-Hellman key exchange
+  using an \begin{code}Algorithm\-ParameterGenerator\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+AlgorithmParameterGenerator apg
+   = AlgorithmParameterGenerator.getInstance("DH");
+apg.init(512); // 512-bit prime
+DHParameterSpec dhSpec = (DHParameterSpec)
+   apg.generateParameters().getParameterSpec
+   (DHParameterSpec.class);
+\end{verbatim}\end{code}\end{quote}
+  or else existing values of $p$ and $a$ can be passed directly:
+\begin{quote}\begin{code}\begin{verbatim}
+DHParameterSpec dhSpec = new DHParameterSpec(p, a);
+\end{verbatim}\end{code}\end{quote}
+
+  \item[Create Public and Private Keys]
+  Values of $x$ and $y$ can be generated by each process
+  by passing a \begin{code}KeyPairGenerator\end{code}
+  the $p$ and $a$ parameters:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyPairGenerator kpg=KeyPairGenerator.getInstance("DH");
+kpg.initialize(dhSpec);
+KeyPair keyPair = kpg.generateKeyPair();
+PublicKey publicKey = keyPair.getPublic();
+PrivateKey privateKey = keyPair.getPrivate();
+\end{verbatim}\end{code}\end{quote}
+  From the two keys their public value $y$ or private value $x$ can be obtained
+  by typecasting the keys to \begin{code}DHPublicKey\end{code} or
+  \begin{code}DHPrivateKey\end{code} respectively.
+
+  \item[Swap Public Keys]
+  The processes involved in the key exchange swap their public values of $y$.
+  This can be accomplished by passing the raw values of $y$
+  (along with $p$ and $a$ if not already publicly available):
+\begin{quote}\begin{code}\begin{verbatim}
+BigInteger yValue = ((DHPublicKey)publicKey).getY();
+... // send yValue
+\end{verbatim}\end{code}\end{quote}
+  and using a \begin{code}DHPublicKeySpec\end{code} with a \begin{code}KeyFactory\end{code}
+  to reassemble the public key at the other end:
+\begin{quote}\begin{code}\begin{verbatim}
+BigInteger otherYValue = ...; // receive
+DHPublicKeySpec otherPublicKeySpec
+   = new DHPublicKeySpec(otherYValue, pValue, aValue);
+KeyFactory keyFactory = KeyFactory.getInstance("DH");
+PublicKey otherPublicKey
+   = keyFactory.generatePublic(otherPublicKeySpec);
+\end{verbatim}\end{code}\end{quote}
+  A preferred way to accomplish this is to send the public key in the
+  standardized X.509 key exchange format:
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] publicKeyBytes = publicKey.getEncoded();
+... // send publicKeyBytes
+\end{verbatim}\end{code}\end{quote}
+  and use an \begin{code}X509EncodedKeySpec\end{code} with a \begin{code}KeyFactory\end{code}
+  to reassemble the public key at the other end:
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] otherPublicKeyBytes = ...; // receive
+X509EncodedKeySpec otherPublicKeySpec
+   = new X509EncodedKeySpec(otherPublicKeyBytes);
+KeyFactory keyFactory = KeyFactory.getInstance("DH");
+PublicKey otherPublicKey
+   = keyFactory.generatePublic(otherPublicKeySpec);
+\end{verbatim}\end{code}\end{quote}
+
+  \item[Generate Secret Key]
+  The private key is used to initialize a \begin{code}KeyAgreement\end{code}
+  and then its \begin{code}doPhase\end{code} method is passed the swapped public key(s)
+  (with a boolean to indicate which is the last public key obtained):
+\begin{quote}\begin{code}\begin{verbatim}
+KeyAgreement ka = KeyAgreement.getInstance("DH");
+ka.init(privateKey); // initialize with own private key
+ka.doPhase(otherPublicKey, true);
+\end{verbatim}\end{code}\end{quote}
+  Then the \begin{code}KeyAgreement\end{code} method \begin{code}generateSecret\end{code}
+  can be used to generate bytes for a secret key (or for a specific
+  algorithm such as \begin{code}DES\end{code} or \begin{code}DESede\end{code}):
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] key = ka.generateSecret();
+\end{verbatim}\end{code}\end{quote}
+
+\end{description}
+
+However, if the communication channel between two processes
+can be compromised so that messages can be modified then
+the Diffie-Hellman key exchange is susceptible to a \defn{man-in-the-middle attack}.
+With this attack an adversary generates its own key pair and
+intercepts all messages between the two processes.
+The attacker starts by replacing the public key
+of each with its own public key during the key exchange.
+Then each process will generate a secret key in common
+with the attacker rather than with each other.
+The attacker then decrypts messages from either process using one secret
+key and can re-encrypt them (possibly modified) for the other process using
+the other secret key.
+If both ends are unaware that their messages have been modified then their
+encrypted communication will be compromised.
+
+To counter a man-in-the-middle attack it is important that the recipient
+of a public key be certain that it is an authentic key for the intended
+process. Merely broadcasting a public key is not secure as anyone could
+forge a broadcast, sending a public key generated by themselves and
+claiming to be another process. The forger would then receive messages
+encrypted for it that were intended for the genuine process until the
+forgery were detected and all other processes notified.
+Instead, the public keys could be made globally available from a
+secure public directory, which would require a man-in-the-middle attack to
+intercept messages to and from the directory (which might be able to be made
+physically secure) as well as eavesdrop on communication between
+processes.
+
+A more secure approach is to use a \defn{public-key authority} which
+controls access to the public keys in a system.
+A central authority holds a public key for each process, which is
+delivered to the authority via some secure means (such as physically),
+and in exchange the process is given a public key for its communication
+with the authority.
+When an initiating process wants to exchange its public key with that
+of another process it can use the following steps:
+\begin{enumerate}
+	\begin{multicols}{2}
+  \item
+     The initiator sends a request encrypted using the public key of the
+    authority, requesting the public key for the receiving process, and
+    including a timestamp with the request.
+    The public-key authority responds with a message encrypted using its private key,
+    including the public key for the receiver and the original request with the timestamp.
+    \columnbreak Once the response has been decrypted by the initiator using the public key of the authority
+    it is assured that the message was encrypted by the authority and that
+    its original request was received by the authority untampered.
+ \begin{center}
+ 	 \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=75,angleB=195]{I}{K}
+    \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=255,angleB=15]{K}{I}
+    \rput(0.75,1.2){\tiny\begin{tabular}{c}public key\\encrypted\\request\end{tabular}}
+    \rput(2.75,0.3){\tiny\begin{tabular}{c}private key\\encrypted\\reply\end{tabular}}
+  \end{pspicture}
+\end{center}
+\end{multicols}
+\begin{multicols}{2}
+  \item
+    The initiator then uses the public key for the receiver to encrypt an identifier
+    for itself and a nonce, which it sends to the receiver, requesting an exchange.
+    It is assured that only the receiver can decrypt the request to obtain
+    its nonce.
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{I}{R}
+    \rput(2.5,0.55){\tiny\begin{tabular}{c}receiver's public key\\encrypted request\end{tabular}}
+  \end{pspicture}
+\end{multicols}
+\begin{multicols}{2} 
+	 \item
+    Upon receiving the request for an exchange, the receiver repeats the same process
+    with the public-key authority to obtain a public key for the initiator. At this stage the initiator and the receiver have securely obtained
+    each other's public key. To assure both ends that they are communicating with
+    each other two further steps are included.
+ \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=105,angleB=345]{R}{K}
+    \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=285,angleB=165]{K}{R}
+    \rput(4.25,1.2){\tiny\begin{tabular}{c}public key\\encrypted\\request\end{tabular}}
+    \rput(2.25,0.3){\tiny\begin{tabular}{c}private key\\encrypted\\reply\end{tabular}}
+  \end{pspicture}
+\end{multicols}
+\begin{multicols}{2} 
+  \item
+    The receiver sends a response to the initiator encrypted using the initiator's
+    public key, including the initiator's nonce as well as its own nonce.
+    When the initiator decrypts the response and finds its own nonce it is 
+    assured that it is actually communicating with the intended receiver.
+
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{R}{I}
+    \rput(2.5,0.55){\tiny\begin{tabular}{c}initiator's public key\\encrypted response\end{tabular}}
+  \end{pspicture}
+
+\end{multicols}
+\begin{multicols}{2} 
+  \item
+    The initiator acknowledges the response from the receiver by sending an
+    acknowledgement message encrypted using the public key of the receiver,
+    including the receiver's nonce.
+When the receiver decrypts the acknowledgement and finds its own nonce it is assured that it is actually
+communicating with the intended initiator.
+ 
+  \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
+    \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
+    \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
+    \ncline[arrows=->,linecolor=red,linewidth=1mm]{I}{R}
+    \rput(2.5,0.55){\tiny\begin{tabular}{c}receivers's public key\\encrypted acknow\end{tabular}}
+  \end{pspicture}
+\end{multicols}
+ 
+\end{enumerate}
+
+One drawback of using a central public-key authority is that it can become
+a bottleneck in a large system, hindering scalability. Also, if the
+authority were to temporarily fail then no keys would be available.
+An alternative approach is to use encrypted certificates.
+A \defn{certificate} holds an identifier for a process and a public key offered
+by it, prepared by a trusted \defn{certificate authority}
+and encrypted by the authority using a private key.
+The certificate authority makes its corresponding public key available
+so that any process can decrypt the certificate and obtain the public key
+of the process, but since its private key is confidential no one else
+can forge a certificate by that authority.
+So long as each process trusts the certificate authority and is certain
+that it has the correct public key for the authority, then two processes
+can exchange public keys simply by sending each other a certificate
+for itself issued by the authority.
+Thus certificates can be forwarded around the system even when the authority
+might be temporarily unavailable.
+A timestamp is usually included as part of the encrypted certificate so that
+obsolete or expired certificates can be ignored.
+Certificates are discussed further in Section \ref{Se:CertificatesKeyStorage}.
+
+Once two processes have successfully exchanged public keys
+(such as via a public-key authority or by exchanging certificates)
+the following steps can be followed to protect against attacks
+before a secret key is exchanged:
+\begin{enumerate}
+  \item First, the initiator and receiver assure that they are communicating
+  with each other by exchanging nonce values. The initiator starts by sending
+  a request encrypted using the public key of the receiver,
+  including an identifier for itself and a nonce.
+
+  \item The receiver replies with a response encrypted using the public key
+  of the initiator, including the nonce of the initiator as well as
+  its own nonce. This assures the initiator that it is communicating with
+  the receiver.
+
+  \item The initiator then sends an acknowledgement encrypted using the
+  public key of the receiver, including the nonce of the receiver.
+  This assures the receiver that it is communicating with the initiator.
+
+  \item One end then generates a secret key. Rather than just encrypting it once
+  using the public key of the other process (so that only that process can decrypt
+  it), the encrypted key is also further encrypted using the private key of the
+  process that generated it. This assures the other end that this process
+  was the process that created the key, and so is not susceptible to a
+  man-in-the-middle attack.
+\end{enumerate}
+
+
+\begin{exercise}[Diffie-Hellman Key Exchange]
+Prepare a program that uses the Diffie-Hellman key exchange algorithm over a
+TCP connection to exchange a secret key.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Elliptic Curve Cryptography                                                   %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Elliptic Curve Cryptography}\label{Se:EllipticCurveCryptography}
+
+\reading{pp301-313}
+
+Due to recent progress in calculating prime factorizations RSA public keys
+need to be at least 1024 bits to provide adequate security.
+\defn{Elliptic Curve Cryptography} (ECC) is a promising alternative
+to RSA for public-key encryption, allowing a much shorter key to be used
+with far less computational overhead, yet providing the same level of security
+as RSA against a cryptanalysis attack.
+
+\noindent
+\begin{minipage}{95mm}
+  For instance, in order to provide roughly the same level of security as a
+  128-bit AES key, RSA requires a 3072-bit key, which places quite a computational
+  burden on any devices using RSA. Worse still, to be equivalent to
+  a 256-bit AES key, RSA requires a 15360-bit key, which is infeasible on limited
+  devices such as mobile phones. ECC however requires just double the number of bits
+  than an AES key, making it particularly attractive for public-key encryption on limited devices. It has begun to challenge
+  RSA and Diffie-Hellman key exchange as the
+\end{minipage}
+\hfill
+\begin{tabular}{|r|r|r|} \hline
+  \multicolumn{3}{|l|}{\textit{Comparable Key Sizes}} \\ \hline\hline
+  \textit{AES} & \textit{RSA} & \textit{ECC} \\ \hline
+  --- & 512 & 112 \\
+  --- & 1024 & 160 \\
+  --- & 2048 & 224 \\
+  128 & 3072 & 256 \\
+  192 & 7680 & 384 \\
+  256 & 15360 & 512 \\\hline
+\end{tabular}
+preferred public-key cryptographic algorithm, since the difficulty of cryptanalysis against ECC gets harder for longer keys much faster than for either RSA or Diffie-Hellman.
+
+An \defn{elliptic curve} over a field consists of the set of points $(x,y)$
+where $x$ and $y$ are elements of the field that satisfy an equation of the form:
+\begin{displaymath}
+  y^2 + a_1xy+a_3y = x^3+a_2x^2+a_4x+a_6,
+\end{displaymath}
+where the coefficients $a_1, a_3, a_2, a_4, a_6$ are also elements of the field.
+
+If the number of elements in the field is not divisible by $2$ nor $3$
+(such as the field $\mathbb{R}$ of all real numbers
+or the finite field $\mathbb{Z}_p$ for a prime $p>3$)
+then using a suitable affine transformation results in the simpler equation:
+\begin{displaymath}
+  y^2 = x^3+ax+b.
+\end{displaymath}
+If instead the number of elements is divisible by $2$ but not by $3$
+(such as the field $GF(2^m)$) then the equation is more
+conveniently expressed in the form $y^2+xy=x^3+ax^2+b$.
+
+The \defn{discriminant} $\Delta=-16\left(4a^3+27b^2\right)$ for an elliptic curve
+$y^2 = x^3+ax+b$
+is a quantity analogous to $\Delta=b^2-4ac$ for a quadratic curve $y=ax^2+bx+c$,
+that determines the number of values of $x$ for which $y=0$.
+If $\Delta\neq0$ then there are three distinct (possibly complex) solutions.
+For example, the elliptic curves $y^2=x^3-x$, $y^2=x^3-x+1$, $y^2=x^3+x$
+all have non-zero discriminant, and so $x^3+ax+b=0$ has three distinct solutions
+for $x$ (the first curve has roots $x=-1, 0, 1$, the second has roots
+$x\approx-1.3247, 0.6624+0.5623i, 0.6624-0.5623i$, and the third has
+$x=0, i, -i$).
+
+\noindent
+\begin{pspicture}*(-1.5,-3.2)(2.5,2.5)
+  % draw the x and y axes
+  \psaxes[arrows=->,linecolor=red](0,0)(-1.5,-2.5)(2.5,2.5)
+  \rput(2.3,0.2){$x$}\rput(0.15,2.2){$y$}
+  \psset{linecolor=blue,linewidth=0.5mm}
+  \psplot{-1}{0}{x 3 exp x sub sqrt}
+  \psplot{-1}{0}{x 3 exp x sub sqrt -1 mul}
+  \psplot{1}{2}{x 3 exp x sub sqrt}
+  \psplot{1}{2}{x 3 exp x sub sqrt -1 mul}
+  \rput(0.5,-2.7){\small$y^2=x^3-x$}
+\end{pspicture}
+\hfill
+\begin{pspicture}*(-1.5,-3.2)(2.5,2.5)
+  % draw the x and y axes
+  \psaxes[arrows=->,linecolor=red](0,0)(-1.5,-2.5)(2.5,2.5)
+  \rput(2.3,0.2){$x$}\rput(0.15,2.2){$y$}
+  \psset{linecolor=blue,linewidth=0.5mm}
+  \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt}
+  \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt -1 mul}
+  \rput(0.5,-2.7){\small$y^2=x^3-x+1$}
+\end{pspicture}
+\hfill
+\begin{pspicture}*(-0.5,-3.2)(2.5,2.5)
+  % draw the x and y axes
+  \psaxes[arrows=->,linecolor=red](0,0)(-0.5,-2.5)(2.5,2.5)
+  \rput(2.3,0.2){$x$}\rput(0.15,2.2){$y$}
+  \psset{linecolor=blue,linewidth=0.5mm}
+  \psplot{0}{2}{x 3 exp x add sqrt}
+  \psplot{0}{1.7}{x 3 exp x add sqrt -1 mul}
+  \rput(0.5,-2.7){\small$y^2=x^3+x$}
+\end{pspicture}
+
+So long as the discriminant is not zero it can be shown that any elliptic curve
+given by $y^2=x^3+ax+b$ can be used to define an abelian group $E(a,b)$
+consisting of all points $(x,y)$ on the curve together with another element denoted by $O$.
+In this group the binary operation $+$ is defined for two points $P$ and $Q$
+depending on four possible cases:
+\begin{enumerate}
+  \item If $P=O$ or $Q=O$ then $P+Q$ is just taken to be $P$ (if $Q=O$)
+  or else $Q$ (if $P=O$), so that $O$ acts as the identity for the group.
+
+ 
+   \item If $P=(x, y)$ and $Q=(x, -y)$, so that $Q$ is the mirror image of $P$ in the $x$-axis
+    then $P+Q$ is taken to be $O$, so that $Q=-P$ is the inverse of $P$ in the group.
+    Algebraically:
+    \begin{displaymath}
+      -\left(x,y\right) = \left(x, -y\right).
+    \end{displaymath}
+
+  \begin{pspicture}*[shift=2.5](-1,-1.25)(1.25,1.25)
+    \psset{unit=0.5}
+    % draw the x and y axes
+    \psaxes[arrows=->,linecolor=red,labels=none,ticks=none](0,0)(-2,-2.5)(2.5,2.5)
+    \psset{linecolor=blue,linewidth=0.5mm}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt -1 mul}
+    \psset{linecolor=black}
+    \dotnode(1.5,1.696){P}\rput(1.9,1.5){\footnotesize$P$}
+    \dotnode(1.5,-1.696){MP}\rput(2,-1.5){\footnotesize$-\!P$}
+    \psline[linecolor=red,linestyle=dashed,linewidth=0.2mm](1.5,1.696)(1.5,-1.696)
+  \end{pspicture}
+  \item
+
+    If $P=(x, y)$ and $Q=(x^\prime, y^\prime)$ with $x\neq x^\prime$ then $P+Q$ is taken
+    to be $-R$ where $R$ is the point where the line through $P$ and $Q$ meets the
+    elliptic curve a third time.
+    Algebraically, the slope of the line through $P$ and $Q$ is given by
+    $m=\frac{y^\prime-y}{x^\prime-x}$
+    and the following equation can be derived:
+    \begin{displaymath}
+      \left(x,y\right)+\left(x^\prime,y^\prime\right)
+      = \left(m^2\!-\!x\!-\!x^\prime, 2mx\!+\!mx^\prime\!-\!m^3\!-\!y\right).
+    \end{displaymath}
+
+
+  \begin{pspicture}*[shift=-2.5](-1,-1.25)(1.25,1.25)
+    \psset{unit=0.5}
+    % draw the x and y axes
+    \psaxes[arrows=->,linecolor=red,labels=none,ticks=none](0,0)(-2,-2.5)(2.5,2.5)
+    \psset{linecolor=blue,linewidth=0.5mm}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt -1 mul}
+    \psset{linecolor=black}
+    \dotnode(1.5,1.696){P}\rput(1.9,1.5){\footnotesize$P$}
+    \dotnode(0.588,0.785){Q}\rput(0.9,0.4){\footnotesize$Q$}
+    \psline[linecolor=red,linewidth=0.2mm](-2,-1.804)(2.304,2.5)
+    \psline[linecolor=red,linestyle=dashed,linewidth=0.2mm](-1.089,-0.893)(-1.089,0.893)
+    \dotnode(-1.089,-0.893){R}\rput(-1.1,-1.4){\footnotesize$R$}
+    \dotnode(-1.089,0.893){PQ}\rput(-1.45,1.4){\footnotesize$P\!\!+\!\!Q$}
+  \end{pspicture}
+
+  \item
+
+    If $P=Q$ then $P+Q=2 P$ is taken to be $-R$ where $R$ is the point
+    where the tangent line through $P$ meets the
+    elliptic curve again.
+    Algebraically, the slope of the tangent is given by $m=\frac{3x^2+a}{2y}$
+    and the following equation can be derived:
+    \begin{displaymath}
+      2\left(x,y\right) = \left(m^2-2x, 3mx-m^3-y\right).
+    \end{displaymath}
+ 
+ 
+  \begin{pspicture}*[shift=-2.5](-1,-1.25)(1.25,1.25)
+    \psset{unit=0.5}
+    % draw the x and y axes
+    \psaxes[arrows=->,linecolor=red,labels=none,ticks=none](0,0)(-2,-2.5)(2.5,2.5)
+    \psset{linecolor=blue,linewidth=0.5mm}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt}
+    \psplot{-1.3247}{2}{x 3 exp x sub 1 add sqrt -1 mul}
+    \psset{linecolor=black}
+    \dotnode(1.5,1.696){P}\rput(1.9,1.5){\footnotesize$P$}
+    \psline[linecolor=red,linewidth=0.2mm](-1.12,-2.5)(2,2.5)
+    \psline[linecolor=red,linestyle=dashed,linewidth=0.2mm](-0.256,-1.113)(-0.256,1.113)
+    \dotnode(-0.256,-1.113){R}\rput(-0.25,-1.6){\footnotesize$R$}
+    \dotnode(-0.256,1.113){PP}\rput(-0.45,1.6){\footnotesize$2P$}
+  \end{pspicture}
+\end{enumerate}
+
+In Elliptic Curve Cryptography a finite field is used instead of $\mathbb{R}$.
+Typically if ECC is implemented in software then the field
+$\mathbb{Z}_p$ where $p$ is a prime is chosen and an elliptic curve
+$y^2=x^3+ax+b$ with $4a^3+27b^2\neq0$ is used (called a \defn{prime curve}),
+and addition calculations are performed using the previous algebraic equations:
+\begin{eqnarray*}
+  \left(x,y\right)+\left(x^\prime,y^\prime\right)
+    &=& \left(m^2\!-\!x\!-\!x^\prime, 2mx\!+\!mx^\prime\!-\!m^3\!-\!y\right) \\
+  2\left(x,y\right) &=& \left(m^2-2x, 3mx-m^3-y\right).
+\end{eqnarray*}
+The number of elements in the resulting abelian group can be shown to be
+somewhere between $p+1-2\sqrt{p}$ and $p+1+2\sqrt{p}$.
+If instead ECC is implemented in hardware (where rapid bitwise operations are
+advantageous) then the field $GF(2^m)$ where $m\geq1$ is chosen and
+an elliptic curve $y^2+xy=x^3+ax^2+b$ with $b\neq0$ is used
+(called a \defn{binary curve}).
+
+\clearpage
+\begin{multicols}{2}
+As an example, the elliptic curve $y^2=x^3-x+1$ over the field $\mathbb{Z}_7$
+has $11$ solutions, the points $(0,1)$, $(0,6)$, $(1,1)$, $(1,6)$,
+$(2,0)$, $(3,2)$, $(3,5)$, $(5,3)$, $(5,4)$, $(6,1)$, $(6,6)$.
+Including the identity $O$ results in a group $E(-1,1)$ with $12$ elements.
+Note that for any point $(x, y)$ in the abelian group
+its inverse is given by
+$-(x,y)=(x, -y)=(x, 7-y)$ resulting in symmetry in the
+illustrated grid. So for example $-(5,3)=(5,4)$ and $-(2,0)=(2,0)$.\columnbreak
+
+\begin{pspicture}[shift=1.75](-0.4,-0.7)(3.1,2.8)
+  \psset{unit=0.5}
+  \multirput*(0,0)(1,0){7}{\psline[linestyle=dotted,linewidth=0.3mm](0,0)(0,6)}
+  \rput(0,-0.4){\footnotesize$0$}\rput(1,-0.4){\footnotesize$1$}
+  \rput(2,-0.4){\footnotesize$2$}\rput(3,-0.4){\footnotesize$3$}
+  \rput(4,-0.4){\footnotesize$4$}\rput(5,-0.4){\footnotesize$5$}
+  \rput(6,-0.4){\footnotesize$6$}
+  \multirput*(0,0)(0,1){7}{\psline[linestyle=dotted,linewidth=0.3mm](0,0)(6,0)}
+  \rput(-0.4,0){\footnotesize$0$}\rput(-0.4,1){\footnotesize$1$}
+  \rput(-0.4,2){\footnotesize$2$}\rput(-0.4,3){\footnotesize$3$}
+  \rput(-0.4,4){\footnotesize$4$}\rput(-0.4,5){\footnotesize$5$}
+  \rput(-0.4,6){\footnotesize$6$}
+  \psset{dotsize=1.5mm}
+  \dotnode(0,1){e1}\dotnode(0,6){e2}\dotnode(1,1){e3}\dotnode(1,6){e4}
+  \dotnode(2,0){e5}\dotnode(3,2){e6}\dotnode(3,5){e7}\dotnode(5,3){e8}
+  \dotnode(5,4){e9}\dotnode(6,1){e10}\dotnode(6,6){e11}
+\end{pspicture}
+\end{multicols}
+\noindent
+Taking $P=(5,3)$ the equation for $2P$ gives that
+$m=\frac{3\cdot5^2-1}{2\cdot3}=4\cdot6^{-1}=3$
+(using the fact that $6^{-1}=6$ in the field $\mathbb{Z}_7$) and so:
+\begin{displaymath}
+  2P = \left(3^2-2\cdot5,3\cdot3\cdot5-3^3-3\right) = (6,1).
+\end{displaymath}
+Larger multiples $nP$ of a point $P$ can be found by repeated doubling of the previous value,
+obtaining $P, 2P, 4P, 8P, 16P, \dots$ in $\Theta(\log_2 n)$. For some particular
+curves and values of $p$ there are more efficient algorithms
+(such as the NIST P192 curve defined using the prime $p=2^{192}-2^{64}+1$
+where $nP$ can be found using up to 38 addition and 192 doubling operations,
+quite feasible for a limited device).
+However, for a cryptanalyst to determine $n$ given $P$ and $nP$ by brute force
+would require checking $P, 2P, 3P, 4P, 5P, \dots$ in $\Theta(n)$, which is infeasible for
+large values of $n$
+(a brute force attack on the NIST P192 curve would require on average approximately
+$\frac{1}{2}p\approx3\times10^{57}$ additions, completely infeasible on any computer).
+Hence the security of ECC relies on the difficulty of computing the integer
+$n$ given the points $P$ and $nP$,
+which is named the \defn{elliptic curve discrete logarithm problem}.
+
+ECC can be utilized for key exchange by making public the
+chosen field ($p$ or $2^m$), the curve ($a$ and $b$ values in the field),
+and a point $G$ in the resulting abelian group for which there are many multiples
+$G, 2G, 3G, \dots, nG$ that are all distinct
+(eventually the multiples start to repeat when for some integer value of $n$ called the
+\defn{order} of $G$ one finds that $nG=O$).
+When two processes want to exchange a secret key each selects its own secure
+random number $s<n$ as its private key and calculates a public key
+$Q=sG$, which is communicated to the other process.
+When each process receives the public key $Q^\prime=s^\prime G$ of the other process
+(but not knowing the other private key $s^\prime$), it calculates the secret key $K$:
+\begin{displaymath}
+  K = s Q^\prime.
+\end{displaymath}
+Note that as in Diffie-Hellman key exchange this gives the same key for
+both processes as:
+\begin{displaymath}
+  s^\prime Q
+  = \underbrace{Q+Q+\cdots+Q}_{s^\prime\mbox{ times}}
+  = \underbrace{G+G+\cdots+G}_{s\cdot s^\prime\mbox{ times}}
+  = \underbrace{Q^\prime+Q^\prime+\cdots+Q^\prime}_{s\mbox{ times}}
+  = s Q^\prime.
+\end{displaymath}
+
+JCA provides support for Elliptic Curve Cryptography, including
+the interface \begin{code}ECField\end{code}
+with implementing classes \begin{code}ECFieldFp\end{code} and \begin{code}ECFieldF2m\end{code}
+for representing finite fields of order $p$ and $2^m$ respectively,
+the interface \begin{code}ECKey\end{code} with subinterfaces
+\begin{code}ECPublicKey\end{code}, \begin{code}ECPrivateKey\end{code}
+and implementing classes \begin{code}ECPublic\-KeySpec\end{code},
+\begin{code}ECPrivateKeySpec\end{code}, and classes
+\begin{code}EllipticCurve\end{code}, \begin{code}ECParameterSpec\end{code},
+\begin{code}ECGenParameterSpec\end{code} for creating elliptic curves and suitable
+parameters for the cipher. The cipher for ECC is named \begin{code}ECIES\end{code}
+and the key agreement is named \begin{code}ECDH\end{code}.
+For example, the Eclipse project \begin{code}AndroidECKeyExchangeDemo\end{code}
+has the activity \begin{code}AndroidECKeyExchangeActivity\end{code}
+that demonstrates ECC key exchange using the fixed elliptic curve secp256r1.
+
+
+The Bouncy Castle lightweight API also supports Elliptic Curve Cryptography,
+including the class \begin{code}ECCurve\end{code} with subclasses
+\begin{code}ECCurve.Fp\end{code} and \begin{code}ECCurve.F2m\end{code}
+for representing prime and binary curves,
+\begin{code}ECPoint\end{code} for representing a point on an elliptic curve,
+and \begin{code}ECDomainParameters\end{code} for suitable parameters for the cipher.
+The MIDlet \begin{code}ECKeyExchangeMIDlet\end{code} demonstrates how ECC can be used for
+key exchange. It creates an \begin{code}ECCurve\end{code} for the fixed elliptic curve secp256r1.
+Using the parameters for the curve and a point
+(\begin{code}GX\end{code},\begin{code}GY\end{code}) on the curve
+an \begin{code}AsymmetricCipher\-KeyPair\end{code}
+is generated and its public key made available to the other process.
+Once the public key is received from the other process
+a \begin{code}BasicAgreement\end{code} is used to calculate the
+secret key.
+Note that the generation of the key pair is very computationally intensive,
+in practice this step would need to be performed in a background thread.
+
+Besides the shorter key size required for ECC as compared to other public-key encryption
+systems, ECC encryption is not vulnerable to \defn{index calculus} attacks
+that are used against RSA and Diffie-Hellman, which make use of certain
+special properties of the groups created by RSA and Diffie-Hellman,
+properties which are not found in the ECC groups $E(a,b)$.
+The best known current attack against ECC is believed to be the \defn{Pollard $\rho$ attack},
+one of a class of cryptanalysis techniques known as a \defn{collision search}.
+However, even its computational requirements grow exponentially with the size of the field,
+quickly becoming infeasible for moderate values of $p$.
+
+
+\begin{exercise}[ECC Key Exchange]\label{Ex:AESEncryptionMobile}
+	Use either the Android example\\
+	 \begin{code}Andr\-oidECKeyExchangeActivity\end{code}
+	or the Java ME Bouncy Castle lightweight example\\ \begin{code}ECKeyExchangeMIDlet\end{code}
+	to prepare a mobile application that uses SMS communication to perform an ECC key exchange.
+\end{exercise}
+\begin{figure*}\begin{program}\begin{verbatim}
+		/**
+		* Android Activity that demonstrates ECC key exchange using the fixed
+		* elliptic curve secp256r1
+		* @author Andrew Ensor
+		*/
+		package aut.hss;
+		...
+		import java.math.BigInteger;
+		import java.security.InvalidAlgorithmParameterException;
+		import java.security.InvalidKeyException;
+		import java.security.KeyPair;
+		import java.security.KeyPairGenerator;
+		import java.security.NoSuchAlgorithmException;
+		import java.security.interfaces.ECPrivateKey;
+		import java.security.interfaces.ECPublicKey;
+		import java.security.spec.ECField;
+		import java.security.spec.ECFieldFp;
+		import java.security.spec.ECParameterSpec;
+		import java.security.spec.ECPoint;
+		import java.security.spec.EllipticCurve;
+		import java.util.Arrays;
+		import javax.crypto.KeyAgreement;
+		...
+		public class AndroidECKeyExchangeActivity extends Activity implements
+		OnClickListener
+		{
+		private Button exchangeButton;
+		private TextView statusTextView;
+		// well-known elliptic curve secp256r1 (256 bit prime, 32 byte)
+		private static final BigInteger P = new BigInteger
+		("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+		private static final BigInteger A = new BigInteger
+		("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+		private static final BigInteger B = new BigInteger
+		("5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3...", 16);
+		private static final BigInteger GX = new BigInteger
+		("6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13...", 16);
+		private static final BigInteger GY = new BigInteger
+		("4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB64...", 16);
+		private static final BigInteger N = new BigInteger
+		("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9C...", 16);
+		private static final int H = 1; // cofactor
+		
+		// inner class that represents one end of a key exchange
+		private static class KeyExchangeProcess
+		{
+		private ECPublicKey publicKey;
+		private ECPrivateKey privateKey;
+		\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+		public KeyExchangeProcess()
+		{  // create the elliptic curve
+		ECField field = new ECFieldFp(P);
+		EllipticCurve curve = new EllipticCurve(field, A, B);
+		// use existing precalculated values of G and N
+		ECPoint G = new ECPoint(GX, GY);
+		ECParameterSpec ecSpec = new ECParameterSpec(curve, G, N, H);
+		// create public and private keys
+		try
+		{  KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+		kpg.initialize(ecSpec); // size of key in bits
+		System.out.println("About to generate a key pair");
+		KeyPair keyPair = kpg.generateKeyPair();
+		System.out.println("Finished generating a key pair");
+		privateKey = (ECPrivateKey)keyPair.getPrivate();
+		publicKey = (ECPublicKey)keyPair.getPublic();
+		
+		}
+		catch (NoSuchAlgorithmException e)
+		{  System.err.println
+		("Encryption algorithm not available: " + e);
+		}
+		catch (InvalidAlgorithmParameterException e)
+		{  System.err.println
+		("Invalid Parameter in Encryption algorithm: " + e);
+		}
+		}
+		
+		public ECPublicKey getPublicKey()
+		{  return publicKey;
+		}
+		
+		public byte[] calculateSecretKey(ECPublicKey otherPublicKey)
+		{  // generate secret key using Elliptic Curve Diffie-Hellman
+		byte[] key = null;
+		try
+		{  KeyAgreement ka = KeyAgreement.getInstance("ECDH");
+		ka.init(privateKey); // initialize with own private key
+		ka.doPhase(otherPublicKey, true);
+		key = ka.generateSecret();
+		}
+		catch (NoSuchAlgorithmException e)
+		{  System.err.println
+		("Key agreement algorithm not available: " + e);
+		}
+		catch (InvalidKeyException e)
+		{  System.err.println
+		("Invalid key in key agreement algorithm: " + e);
+		}
+		return key;
+		}
+		}
+		}
+		\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A MIDlet that demonstrates ECC key exchange via the Bouncy Castle
+   lightweight API
+   @author Andrew Ensor
+*/
+...
+public class ECKeyExchangeMIDlet extends MIDlet
+   implements CommandListener
+{
+   private Display display;
+   private Form form;
+   private Command exitCommand, exchangeCommand;
+   // well-known elliptic curve secp256r1 (256 bit prime, 32 byte)
+   private static final BigInteger P = new BigInteger
+      ("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+   private static final BigInteger A = new BigInteger
+      ("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+   private static final BigInteger B = new BigInteger
+      ("5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3...", 16);
+   private static final BigInteger GX = new BigInteger
+      ("6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13...", 16);
+   private static final BigInteger GY = new BigInteger
+      ("4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB64...", 16);
+   private static final BigInteger N = new BigInteger
+      ("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9C...", 16);
+   private static final int H = 1; // cofactor
+
+   ...
+   // implementation of the CommandListener interface
+   public void commandAction(Command c, Displayable s)
+   {  if (c == exitCommand)
+         exitMIDlet();
+      else if (c == exchangeCommand)
+      {  KeyExchangeProcess processA = new KeyExchangeProcess();
+         KeyExchangeProcess processB = new KeyExchangeProcess();
+         CipherParameters publicKeyA = processA.getPublicKey();
+         CipherParameters publicKeyB = processB.getPublicKey();
+         BigInteger secretKeyA=processA.calculateSecretKey(publicKeyB);
+         BigInteger secretKeyB=processB.calculateSecretKey(publicKeyA);
+         if (secretKeyA.equals(secretKeyB))
+         {  form.append("Secret keys do agree and have length "
+               + (secretKeyA.bitLength()+7)/8 + " bytes\n");
+            form.append("Secret key: ".concat(secretKeyA.toString()));
+         }
+         else
+         {  form.append("Error: secret keys do not agree!");
+            form.append("Secret key: ".concat(secretKeyA.toString()));
+            form.append("Secret key: ".concat(secretKeyB.toString()));
+         }
+      }
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   // inner class that represents one end of a key exchange
+   private class KeyExchangeProcess
+   {
+      private CipherParameters publicKey, privateKey;
+
+      public KeyExchangeProcess()
+      {  // create the elliptic curve
+         ECCurve.Fp curve = new ECCurve.Fp(P, A, B);
+         // use existing precalculated values of G and N
+         ECPoint G = new ECPoint.Fp(curve,
+            new ECFieldElement.Fp(P,GX), new ECFieldElement.Fp(P,GY));
+         ECDomainParameters params = new ECDomainParameters(curve, G,
+            N);
+         // create public and private keys
+         SecureRandom generator = new SecureRandom();
+         ECKeyGenerationParameters ecSpec
+            = new ECKeyGenerationParameters(params, generator);
+         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
+         kpg.init(ecSpec);
+         System.out.println("About to generate a key pair");
+         AsymmetricCipherKeyPair keyPair=kpg.generateKeyPair(); //slow
+         System.out.println("Finished generating a key pair");
+         publicKey = keyPair.getPublic();
+         privateKey = keyPair.getPrivate();
+      }
+
+      public CipherParameters getPublicKey()
+      {  return publicKey;
+      }
+
+      public BigInteger calculateSecretKey
+         (CipherParameters otherPublicKey)
+      {  // generate secret key using
+         BasicAgreement ba = new ECDHBasicAgreement();
+         ba.init(privateKey); // initialize with own private key
+         BigInteger key = ba.calculateAgreement(otherPublicKey);
+         return key;
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+

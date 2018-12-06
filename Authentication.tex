@@ -1,0 +1,1219 @@
+% This is the LaTeX file for the chapter:
+%   Authentication
+% for the manual:
+%   Highly Secure Systems
+% Written by Andrew Ensor
+% Last updated 5 June 2006.
+
+\chapter{Authentication}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Message Authentication                                                        %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Message Authentication}\label{Se:MessageAuthentication}
+
+\reading{pp318-344}
+
+Symmetric and public-key encryption both provide confidentiality of messages,
+ensuring that only the intended recipient can decrypt the ciphertext and
+obtain the original plaintext. However, unless the recipient knows the format of the
+plaintext to expect, such as English text, a recognizable image,
+or the response of a nonce value,
+the recipient can not be sure of the actual source of a particular message,
+or whether it may have been tampered with en route.
+The difficulty stems from the inability of a recipient to determine what is valid plaintext
+from a block that was encrypted with an incorrect key.
+Some file formats start with a recognizable header, but this might not
+inhibit an adversary replacing later blocks of ciphertext with their own blocks
+in an attempt to disrupt the system (in fact it might be better to put recognizable
+information at the end of the file rather than at the start if CBC mode encryption were used).
+
+The verification of the integrity of a message is known as
+\defn{message authentication}, ensuring that the message did originate
+from the alleged source and has not been altered in any way.
+This is achieved by adding extra information to the message calculated from its contents.
+One simple approach is to append an error-detecting code known as a
+\defn{frame check sequence} (FCS) or \defn{checksum} to the message before the
+message is encrypted, either with a secret key for a symmetric cipher or with the private key
+of a public-key cipher of the sender. When the recipient decrypts the message the FCS can be
+recalculated and compared with the value sent with the message.
+If the two FCS values agree then the recipient presumes the message was not
+altered between when the two values were calculated.
+So long as it is certain that the key used for encryption was kept confidential
+it can be sure that the message was encrypted by the alleged source.
+
+More generally, a \defn{(cryptographic) hash code} or \defn{message digest} is a fixed-length
+value computed for a message which acts as a fingerprint for it.
+Ideally, a function $h$ used to calculate hash codes should be able to be applied
+to messages of arbitrary lengths and be relatively quick to compute.
+For security, a hash function is designed to be \defn{one-way}, meaning
+that given a hash code $y$ it is computationally infeasible to create a message
+$M$ which has the hash code $y$ ($h(M)=y$).
+Hash functions do not need to be one-to-one functions, so it is possible that there are
+two messages $M$ and $M^\prime$ which have the same hash code ($h(M^\prime)=h(M)$),
+in which case a \defn{collision} is said to occur.
+They should however have \defn{weak collision resistance}, meaning that
+given a message $M$ it is computationally infeasible to create another message
+$M^\prime$ which has the same hash code ($h(M^\prime)=h(M)$).
+
+Once a suitable hash function has been devised, it can be used for the
+authentication of a message.
+If the message itself should remain confidential then the hash code
+can be appended to the plaintext before it all gets encrypted as a single message.
+Then when the intended recipient decrypts the message it can check whether the appended
+hash code matches that of the decrypted message, and so determine whether the message
+was authentic.
+
+Often however, only authentication of a message is required, as the message
+itself might need to be readable by all processes in the system (such as a
+broadcast) or else confidentiality might
+already be provided by the communication protocol.
+In this case just the hash code itself needs to be encrypted with the private key
+of the sender, and the encrypted hash code appended to the plaintext message.
+As only the holder of the key can produce the valid encrypted hash code,
+any recipient can decrypt the hash code to determine whether the
+message $M$ was actually created by the holder of the private key.
+It is important to note that if an adversary could devise a message $M^\prime$
+with exactly the same hash code as the original message $M$,
+then $M$ could be substituted by $M^\prime$ and appended
+with the original encrypted hash code without the encryption ever needing to be broken,
+resulting in a forged message.
+Thus it is essential for authenticity that the hash function have weak collision resistance.
+
+One simple hash code is the \defn{longitudinal redundancy check}, which calculates
+an $n$-bit hash code by breaking a message $M$ into blocks $B_1, B_2, \dots, B_m$
+each of length $n$, padding with zeros if required and taking a bitwise
+XOR of each block:
+\begin{displaymath}
+  h(M) = B_1 \oplus B_2 \oplus \cdots \oplus B_m.
+\end{displaymath}
+Often there are regularities in the blocks, such as for ASCII strings where the
+most-significant bit of each byte is typically $0$.
+To avoid such regularities reducing the possible hash values the hash code might be
+rotated one bit before each XOR is calculated.
+However, the longitudinal redundancy check does not have weak collision resistance,
+given a message $M$ it is not difficult to modify it slightly into a message $M^\prime$
+(perhaps changing the amount for an on-line payment or a name) while still
+maintaining the same hash code.
+Even if the hash code were encrypted with the plaintext message using
+a secure symmetric block cipher with CBC mode this particular hash function might not be able
+to detect a reordering of the ciphertext blocks by an adversary.
+
+Most contemporary hash functions make use of multiple rounds in which the
+message is used block by block $B_1, B_2, \dots, B_m$ to calculate its hash code.
+\begin{figure*}[htb]\begin{center}
+\begin{pspicture}(0,0)(11.5,2)
+  \rput(2,1.75){\rnode{B1}{$B_1$}}
+  \rput(1,0.35){\rnode{IV}{\scriptsize{\begin{tabular}{c}initialization\\vector\end{tabular}}}}
+  \psline[fillstyle=solid,fillcolor=yellow](2.5,0)(2.5,1.5)(3.25,1.15)(3.25,0.35)(2.5,0)
+  \pnode(2.5,1.15){C11}\pnode(2.5,0.35){C12}\pnode(3.25,0.75){C13}
+
+  \rput(4,1.75){\rnode{B2}{$B_2$}}
+  \psline[fillstyle=solid,fillcolor=yellow](4.5,0)(4.5,1.5)(5.25,1.15)(5.25,0.35)(4.5,0)
+  \pnode(4.5,1.15){C21}\pnode(4.5,0.35){C22}\pnode(5.25,0.75){C23}
+
+  \rput(6,1.75){\rnode{B3}{$B_3$}}
+  \psline[fillstyle=solid,fillcolor=yellow](6.5,0)(6.5,1.5)(7.25,1.15)(7.25,0.35)(6.5,0)
+  \pnode(6.5,1.15){C31}\pnode(6.5,0.35){C32}\pnode(7.25,0.75){C33}
+
+  \rput(8.5,0.35){\rnode{dots}{\dots}}
+  \rput(7.5,1.75){\rnode{dots2}{\dots}}
+
+  \rput(9,1.75){\rnode{Bm}{$B_m$}}
+  \psline[fillstyle=solid,fillcolor=yellow](9.5,0)(9.5,1.5)(10.25,1.15)(10.25,0.35)(9.5,0)
+  \pnode(9.5,1.15){Cm1}\pnode(9.5,0.35){Cm2}\pnode(10.25,0.75){Cm3}
+
+  \rput(11.25,0.75){\rnode{out}{$h(M)$}}
+
+  \psset{arrows=->}
+  \ncangle[angleA=270,angleB=180]{B1}{C11}\ncline{IV}{C12}
+  \ncangle[angleA=270,angleB=180]{B2}{C21}\ncangles[angleA=0,angleB=180]{C13}{C22}
+  \ncangle[angleA=270,angleB=180]{B3}{C31}\ncangles[angleA=0,angleB=180]{C23}{C32}
+  \ncangles[angleA=0,angleB=180]{C33}{dots}\ncline{dots}{Cm2}
+  \ncangle[angleA=270,angleB=180]{Bm}{Cm1}\ncline{Cm3}{out}
+\end{pspicture}
+\end{center}\end{figure*}
+In each round the result from the previous round is used along
+with the next block of the message as input to a \defn{compression function}
+which is designed to produce as few collisions as possible, with a fixed
+initialization vector used for the first round.
+So long as the compression function is collision resistent it can be shown that
+the resulting hash function will also be collision resistent.
+Thus attention can be focused on designing a good compression function for which it
+would be very difficult for an adversary to create a block that collides with another.
+
+However, weak collision resistance might not be sufficient to ensure the
+authenticity of a message if an adversary is permitted to submit its
+messages to a process responsible for calculating and encrypting hash codes before they
+are sent.
+In such a situation the hash function must have \defn{strong collision resistance},
+meaning that it is computationally infeasible to create two messages $M$ and $M^\prime$
+that have the same hash code ($h(M^\prime)=h(M)$).
+Without strong collision resistance, an adversary could submit an innocuous
+message $M$ to have its hash code calculated and encrypted by a process which is
+trusted in the system. Then the adversary could swap the message $M$ with
+a non-approved message $M^\prime$ and append the correct encrypted hash code.
+When a recipient decrypted the hash code appended to $M^\prime$ it would presume
+that the trusted process did approve it, since that process did appear to have
+encrypted a valid hash code for it.
+
+\newcommand{\wordvariants}[1]%
+  {\hspace{-2mm}\begin{scriptsize}\begin{tabular}{c}#1\end{tabular}\end{scriptsize}\hspace{-2mm}}
+
+This form of attack is known as a \defn{birthday attack}, due to a result
+from probability which states that the probability that in a room of $n$ people
+there are at least two that have the same birthday is
+$1-\frac{365!}{(365-n)!365^n}$.
+Surprisingly, with only $n=23$ people the probability is over $0.5$.
+The attack proceeds as follows. First two messages are prepared by the adversary,
+one innocuous message $M$ such as:
+\begin{quote}\begin{code}
+Hi Jack, the paper Highly Secure Systems is great
+\end{code}\end{quote}
+and another subversive message $M^\prime$:
+\begin{quote}\begin{code}
+Please transfer all the funds from the account of Jack
+\end{code}\end{quote}
+Then many slight variants of each is produced, such as the following $2^5=32$ variants of $M$:
+\begin{quote}\begin{code}
+\wordvariants{Hi\\Greetings} Jack, \wordvariants{the\\my} \wordvariants{paper\\course}
+Highly Secure \wordvariants{Systems\\Software} is \wordvariants{great\\fun}
+\end{code}\end{quote}
+and the following $2^5=32$ variants of $M^\prime$:
+\begin{quote}\begin{code}
+\wordvariants{Please\\Immediately} \wordvariants{transfer\\remove} all
+\wordvariants{the\\available} \wordvariants{funds\\money} from
+\wordvariants{the\\\emph{}} account of Jack
+\end{code}\end{quote}
+These variants could be automated by the adversary using a thesaurus, or more easily
+by alternating sequences of space-backspace-space with space-space-backspace.
+For each variant of $M$ and of $M^\prime$ its hash code is calculated, and more variants
+produced until a collision is found between a variant of $M$ and a variant of $M^\prime$.
+
+If variants $M, M_1, M_2, \dots, M_{k-1}$ are produced with distinct hash codes,
+and variants\\ $M^\prime, M_1^\prime, M_2^\prime, \dots, M_{k-1}^\prime$ are produced
+with distinct hash codes,
+then the probability that any selected $M_i$ has the same hash code as any
+particular $M_j^\prime$ is $1/N$ (presuming all hash codes are equally likely),
+where $N$ is the number of possible values of the hash code.
+Thus the probability that $M_i$ does not have the same hash code as any of the
+$k$ variants of $M^\prime$ is $\left(1-\frac{1}{N}\right)^k$.
+If $N$ is large this probability is very close to $1$, making a brute-force attack infeasible.
+However, there are also $k$ variants of $M$, so the probability that none of its variants
+have the same hash code as any of the variants of $M^\prime$ is
+$\left(\left(1-\frac{1}{N}\right)^k\right)^k=\left(1-\frac{1}{N}\right)^{k^2}$.
+This probability drops below $0.5$ when:
+\begin{displaymath}
+  k > \sqrt{\frac{\ln 0.5}{\ln(1-1/N)}}\approx0.83\sqrt{N}.
+\end{displaymath}
+If the hash function produces hash codes with $m$ bits, so $N=2^m$, then
+producing $k=2^{m/2}$ variants of $M$ and $M^\prime$ will probably be sufficient
+for a successful birthday attack. This makes any hash function which produces
+hash codes with less than about $128$ bits vulnerable.
+
+A \defn{message authentication code} (MAC) is a type of hash code, but where the
+hash function also takes a secret key as input as well as a message of arbitrary length.
+Hence only the holders of the secret key are able to recalculate a MAC
+and verify the authenticity of a message.
+Essentially, a MAC acts like hash code encrypted using a secret key rather than
+a private key. Unlike a symmetric cipher, a MAC hash function need not be one-to-one
+which can make it harder for a cryptanalysis attack on the key used by a MAC. The inclusion
+of the secret key in the hash function also increases the difficulty of attacks.
+So long as only the receiver and the sender of a message share the secret key used
+in calculating the MAC, the receiver can be assured the message was not altered and
+did originate from the sender
+(however, it can not prove to others that the sender and not itself was the creator of the MAC).
+
+The \defn{Data Authentication Code} (DAC) was a popular MAC based on the DES cipher.
+Essentially, it processes a message in $64$-bit blocks by encrypting each block
+using CBC mode with a zero initialization vector, using padding with zeros if
+required in the final block.
+Either the entire final encrypted block is used as the DAC, or else just some of
+the left-most bits of that block.
+Despite the popularity of DAC, due to security weaknesses in DES the DAC is
+being replaced by newer algorithms that are more resistant to attack.
+
+
+\begin{exercise}[Implementation of DAC]
+Prepare an implementation of the Data Authentication Code using a DES cipher.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Hash and MAC Algorithms                                                       %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Hash and MAC Algorithms}
+
+\reading{pp352-374}
+
+The \defn{Message Digest 5} (MD5) algorithm has been a popular cryptographic hash function
+that produces a $128$-bit hash code for a message.
+It processes a variable length message by breaking it into $512$-bit blocks and using the
+hash code produced from one round as the initialization vector for the next round,
+where the first round uses the fixed IV
+\begin{code}67452301EFCDAB8998BADCFE10325476\end{code}.
+The message is padded so that its length is divisible by $512$ by first appending a
+single $1$ bit, followed by as many $0$ bits as required to leave exactly $64$ bits
+available in the final block which are used to store the number of bits in the message
+(hence MD5 is only designed for a message up to $2^{64}$ bits in length).
+\begin{codebox}
+\Procname{$\proc{MD5-Padding}(M)$}
+\li \Comment pad the message $M$ including appending the $64$-bit integer length of $M$
+\li $l \gets \left(\id{length}(M)+65\right)\mbox{ mod }512$
+   \`\Comment number of occupied bits in last block
+\li append bit $1$ to $M$
+\li \For $i\gets l+1$ \To $512$ \Do
+\li    append bit $0$
+    \End
+\li append $\id{length}(M)$ as a $64$-bit integer value
+\end{codebox}
+Each $512$-bit block is split into $16$ integer $32$-bit values which are used to modify
+four $32$-bit buffer values $a$, $b$, $c$, $d$ created from the initialization vector.
+These buffer values pass through $64$ iterations of a loop resulting in a hash value for
+the block (used as the initialization vector for the next round) as can be seen by the
+$\proc{MD5-Round}$ algorithm.
+\begin{figure*}
+\begin{codebox}
+\Procname{$\proc{MD5-Round}(B, \id{IV})$}
+\li \Comment perform message digest MD5 on 512-bit block $B$ using init vector $\id{IV}$
+\li \Comment create 2D array $R$ of left rotate amounts for each iteration of loop
+\li $R \gets \{\{7, 12, 17, 22\}, \{5, 9, 14, 20\}, \{4, 11, 16, 23\}, \{6, 10, 15, 21\}\}$
+\li \Comment create integer array $T$ of constants using $\sin$ function in radians
+\li \For $i \gets 0$ \To $63$ \Do
+\li    $T[i] \gets \left\lfloor \id{abs}(\id{sin}(i+1))\cdot2^{32}\right\rfloor$
+    \End
+\li \Comment split block $B$ into $16$ words $W[0], \dots, W[15]$ each $32$-bit integer
+\li \For $k \gets 0$ \To $15$ \Do
+\li    $W[k] \gets B[32k\, \dots\, 32k+31]$
+    \End
+\li \Comment create $32$-bit int buffer values $a$, $b$, $c$, $d$ from initialization vector
+\li $a \gets \id{IV}[0\dots31]$
+\li $b \gets \id{IV}[32\dots63]$
+\li $c \gets \id{IV}[64\dots95]$
+\li $d \gets \id{IV}[96\dots127]$
+\li \For $i \gets 0$ \To $63$ \Do
+\li    \If $0\leq i\leq 15$ \Then
+\li       $j \gets (b\wedge c)\vee(\overline{b}\wedge d)$
+\li       $k \gets i$
+\li    \ElseIf $16\leq i\leq 31$ \Then
+\li       $j \gets (d\wedge b)\vee(\overline{d}\wedge c)$
+\li       $k \gets (5i+1)\mbox{ mod }16$
+\li    \ElseIf $32\leq i\leq 47$ \Then
+\li       $j \gets b \oplus c \oplus d$
+\li       $k \gets (3i+5)\mbox{ mod }16$
+\li    \Else \Comment $48\leq i\leq 63$
+\li       $j \gets c \oplus(b\vee\overline{d})$
+\li       $k \gets 7i\mbox{ mod }16$
+       \End
+\li    $r \gets R[i/16][i\mbox{ mod }4]$ \`\Comment number of bits by which to rotate left
+\li    $\id{temp} \gets d$
+\li    $d \gets c$
+\li    $c \gets b$
+\li    $b \gets \left((\id{leftRotate}(a+j+T[i]+W[k], r)+b\right)\mbox{ mod }2^{32}$
+\li    $a \gets \id{temp}$
+    \End
+\li \Comment calculate the message digest from $a$, $b$, $c$, $d$
+\li $a \gets a + \id{IV}[0\dots31]$
+\li $b \gets b + \id{IV}[32\dots63]$
+\li $c \gets c + \id{IV}[64\dots95]$
+\li $d \gets d + \id{IV}[96\dots127]$
+\li \Return $128$-bit value $abcd$ as the message digest
+\end{codebox}
+\end{figure*}
+
+Since 1996 various security vulnerabilities have been found in the MD5 algorithm,
+including an attack that can find a collision in less than a minute.
+Hence, MD5 is very vulnerable to a birthday attack, and no longer considered sufficiently
+secure to provide authentication.
+For example, the $128$-byte message:
+
+\begin{scriptsize}\begin{code}\begin{quote}
+\begin{tabular}{cccccccccccccccc}
+  D1 & 31 & DD & 02 & C5 & E6 & EE & C4 & 69 & 3D & 9A & 06 & 98 & AF & F9 & 5C \\
+  2F & CA & B5 & \underline{87} & 12 & 46 & 7E & AB & 40 & 04 & 58 & 3E & B8 & FB & 7F & 89 \\
+  55 & AD & 34 & 06 & 09 & F4 & B3 & 02 & 83 & E4 & 88 & 83 & 25 & \underline{71} & 41 & 5A \\
+  08 & 51 & 25 & E8 & F7 & CD & C9 & 9F & D9 & 1D & BD & \underline{F2} & 80 & 37 & 3C & 5B \\
+  D8 & 82 & 3E & 31 & 56 & 34 & 8F & 5B & AE & 6D & AC & D4 & 36 & C9 & 19 & C6 \\
+  DD & 53 & E2 & \underline{B4} & 87 & DA & 03 & FD & 02 & 39 & 63 & 06 & D2 & 48 & CD & A0 \\
+  E9 & 9F & 33 & 42 & 0F & 57 & 7E & E8 & CE & 54 & B6 & 70 & 80 & \underline{A8} & 0D & 1E \\
+  C6 & 98 & 21 & BC & B6 & A8 & 83 & 93 & 96 & F9 & 65 & \underline{2B} & 6F & F7 & 2A & 70
+\end{tabular}
+\end{quote}\end{code}\end{scriptsize}
+
+\noindent
+has the MD5 hash code \begin{code}79054025255FB1A26E4BC422AEF54EB4\end{code}.
+But changing just the most-significant bit of only six bytes in this message results in
+a different message with the identical hash code.
+Despite its deficiencies, MD5 is still used to perform (non-secure) error checking on messages and
+as a component in more secure algorithms.
+
+The \defn{Secure Hash Algorithm} (SHA-1) has been a popular
+successor to MD5. It was developed by the US National Security
+Agency based on a predecessor (MD4) of the MD5 algorithm, but
+produces a (more secure) $160$-bit hash code using five $32$-bit
+buffer values $a$, $b$, $c$, $d$, $e$ and $80$ iterations of a
+loop. It is employed in many popular security protocols such as
+SSL/TLS and used for the secure e-mail protocols
+Secure/Multipurpose Internet Mail Extensions (S/MIME) and Pretty
+Good Privacy (PGP). The \begin{code}MessageDigest\end{code} class
+from the \begin{code}java.security\end{code} package can be used
+in Java to calculate hash codes for hash functions such as
+\begin{code}MD5\end{code} and \begin{code}SHA-1\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+MessageDigest digest = MessageDigest.getInstance("SHA-1");
+byte[] message = ...;
+digest.update(message); // can update several times
+byte[] hashCode = digest.digest(); // digest gets reset
+\end{verbatim}\end{code}\end{quote}
+In C\# the class \begin{code}SHA1Managed\end{code} from the
+\begin{code}System.Security.Cryptography\end{code} namespace is instead used:
+\begin{quote}\begin{code}\begin{verbatim}
+SHA1 digest = new SHA1Managed();
+byte[] message = ...;
+byte[] hashCode = digest.ComputeHash(message);
+\end{verbatim}\end{code}\end{quote}
+
+Although still widely used, the security of SHA-1 was considered suspect even before 2005
+when an attack was found that produced collisions in SHA-1.
+The attack took advantage of the structure and some security weaknesses in SHA-1,
+requiring only $2^{69}$ operations to find a collision,
+$2048$ times fewer than expected for a birthday attack.
+Hence, both MD5 and SHA-1 are being phased out in favour of more secure hash functions.
+
+In response to the potential vulnerabilities of SHA-1 it has been modified to give
+three new algorithms, SHA-256, SHA-384, SHA-512,
+which give hash codes of length $256$, $384$, $512$ bits respectively.
+SHA-512 processes a message using blocks of $1024$ bits at a time,
+and first pads the message to $1024$-bit blocks by appending
+a $1$ bit followed by $0$ bits and then a $128$-bit integer giving the
+length of the message in bits.
+It uses eight $64$-bit buffer values $a$, $b$, $c$, $d$, $e$, $f$, $g$, $h$
+and uses $80$ iterations of a loop.
+In each iteration $64$ bits are extracted from the $1024$-bit block and passed
+as an \defn{input sequence} into an operation along with the $512$ bits of
+buffer values. After $80$ iterations each of the eight updated buffer values
+is added to its original value (modulo $2^{64}$) to produce a $512$-bit hash code.
+\begin{figure*}[htb]\begin{center}
+\begin{pspicture}(-3,0)(8.5,7.5)
+  \psline(0,0)(0,7.5)(5.8,5.75)(5.8,1.75)(0,0)
+  \rput(3.5,0){SHA-512 compression function}
+
+  \rput(-1.2,7.5){\rnode{B}{Block $B_i$}}
+
+  \rput(1,5){\rnode{IS0}{\rule[-1.5mm]{0mm}{5mm}$I\!S_0$}} % note: rule is strut
+  \psline(0.8,4.75)(0.6,5.25)(1.4,5.25)(1.2,4.75)(0.8,4.75)
+  \rput(2,5){\rnode{IS1}{\rule[-1.5mm]{0mm}{5mm}$I\!S_1$}} % note: rule is strut
+  \psline(1.8,4.75)(1.6,5.25)(2.4,5.25)(2.2,4.75)(1.8,4.75)
+  \rput(2.75,5){\rnode{ISdots}{\scriptsize$\dots$}}
+  \rput(3.5,5){\rnode{IS79}{\rule[-1.5mm]{0mm}{5mm}$I\!S_{\!7\!9}$}} % note: rule is strut
+  \psline(3.3,4.75)(3.1,5.25)(3.9,5.25)(3.7,4.75)(3.3,4.75)
+
+  \rput(1,3){\rnode{R0}{\psframebox{\rule[-8mm]{0mm}{16mm}Op}}}
+  \rput(2,3){\rnode{R1}{\psframebox{\rule[-8mm]{0mm}{16mm}Op}}}
+  \rput(2.75,3){\rnode{Rdots}{\scriptsize$\dots$}}
+  \rput(3.5,3){\rnode{R79}{\psframebox{\rule[-8mm]{0mm}{16mm}Op}}}
+
+  \rput(-1.8,1.75){\rnode{In}{\shortstack{Round\\Input}}}
+
+  \pnode(1,5.75){B0}
+  \pnode(2,5.75){B1}
+  \pnode(3.5,5.75){B79}
+
+  \rput(5,3.75){\rnode{Add}{\psframebox{\shortstack{8\\word\\pair\\adds}}}}
+  \rput(7.5,3.75){\rnode{Out}{\shortstack{Round\\Output}}}
+
+  \ncangle[angleA=270, angleB=180]{B}{B79}\naput[npos=0.8]{\hspace{-1mm}\scriptsize{1024 bit}}
+  \ncline[arrows=->]{B0}{IS0}\ncline[arrows=->]{IS0}{R0}\nbput{\scriptsize{64 bit}\hspace{-1mm}}
+  \ncline[arrows=->]{B1}{IS1}\ncline[arrows=->]{IS1}{R1}
+  \ncline[arrows=->]{B79}{IS79}\ncline[arrows=->]{IS79}{R79}
+
+  \ncangle[arrows=->,angleA=0,angleB=180]{In}{R0}\naput[npos=0.4]{\scriptsize{512 bit}}
+  \ncline[arrows=->]{R0}{R1}
+  \ncline[arrows=->]{R1}{Rdots}
+  \ncline[arrows=->]{Rdots}{R79}
+  \ncangle[arrows=->,angleA=0,angleB=180]{R79}{Add}
+  \ncangle[arrows=->,angleA=0,angleB=270]{In}{Add}
+  \ncline[arrows=->]{Add}{Out}\naput[npos=0.6]{\scriptsize{512 bit}}
+\end{pspicture}
+\end{center}\end{figure*}
+
+The \defn{Whirlpool} algorithm uses a different approach to generating a hash function.
+It is based on the AES block cipher, but has been adapted to provide performance
+comparable to SHA-512, and processes a variable length message by breaking it into
+$512$-bit blocks to produce a $512$-bit hash code ($128$ bits was considered
+too susceptible to a birthday attack to be used by a hash function).
+It too starts by padding the message with a $1$ bit followed by some $0$ bits
+and a $256$-bit integer length of the message, but uses 10 iterations of an S-box substitution,
+a rotation of the columns, a mix of rows, and an XOR with a round key which is obtained
+by performing the same iterations with a fixed initialization vector.
+Although it is now an ISO standard, and along with SHA-256, SHA-384, SHA-512 is one of
+the only hash functions endorsed by the New European Schemes for Signatures, Integrity, and
+Encryption (NESSIE), the default \begin{code}SunJCE\end{code} security provider does not (yet) provide
+support for Whirlpool. However, support is available through other Java providers
+such as the Bouncy Castle provider using the algorithm name \begin{code}WhirlpoolDigest\end{code},
+and in the Lightweight API with the following code fragment:
+\begin{quote}\begin{code}\begin{verbatim}
+Digest digest = new WhirlpoolDigest();
+byte[] message = ...;
+digest.update(message, 0, message.length);
+byte[] hashCode = new byte[digest.getDigestSize()];
+digest.doFinal(hashCode, 0);
+\end{verbatim}\end{code}\end{quote}
+
+Usually passwords are not stored as plaintext in a system (even on
+a process that might be considered relatively secure), but rather
+only ever stored in some encrypted form. This way, if a password
+file is obtained by an adversary only the encrypted keys are
+obtained. When a password needs to be checked by the system for
+validity, its plaintext form is encrypted (and so can be safely
+communicated) and compared with the stored encrypted key. Since
+the original password never need be obtained from the encrypted
+key, hash functions are usually chosen for the encryption as they
+are designed to be one-way (whereas ciphers are designed to be
+reversible). Although MD5 does not have strong collision
+resistance, it still provides some security against a
+\defn{preimage attack}, where a cryptanalyst attempts to find a
+message that has a specific hash code, and so is still widely used
+for encrypting passwords.
+
+\defn{Password based encryption} (PBE) derives an secret key from a password.
+In order to make attempts to deduce the password more time
+consuming for an attacker, most PBE implementations mix a (fixed)
+random number called a \defn{salt} with the key. Even if an
+attacker did manage to find the secret key corresponding to a
+password, the salt could be changed, thus totally changing the key
+(and if different salts were used around a system, each would have
+to be attacked separately). The following Java code fragment uses
+MD5 and DES to generate a PBE encrypted key from a password
+(specified as a \begin{code}char[]\end{code} array since
+\begin{code}String\end{code} objects are immutable), a salt, and
+an \begin{code}int\end{code} that specifies the number of
+iterations to use in the PBE calculation:
+\begin{quote}\begin{code}\begin{verbatim}
+char[] password = ...; // never stored as a String
+byte[] salt = ...; // fixed random salt bytes
+PBEKeySpec pbeSpec = new PBEKeySpec(password, salt, 20);
+SecretKeyFactory keyFactory
+   = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+SecretKey key = keyFactory.generateSecret(pbeSpec);
+\end{verbatim}\end{code}\end{quote}
+The resulting secret key could then be used as an encrypted
+version of the password, or instead as the secret key for DES
+encryption:
+\begin{quote}\begin{code}\begin{verbatim}
+Cipher cipher = Cipher.getInstance("PBEWithMD5AndDES");
+\end{verbatim}\end{code}\end{quote}
+PBE works by first appending the salt to the password and then
+applying the hash function repeatedly to the result the specified
+number of iterations. In the case of an MD5 hash function, a 128
+bit hash code is produced, which for a DES cipher the first 64
+bits get used as the secret key and the remaining 64 bits as the
+initialization vector for CBC mode.
+
+The Data Authentication Code described in Section \ref{Se:MessageAuthentication}
+uses the DES algorithm with CBC mode to produce a MAC for a message.
+However, cryptographic hash functions such as MD5, SHA-1 and Whirlpool execute faster than
+a cipher such as DES, so it is generally preferable to create a MAC from a hash function
+than from a symmetric cipher.
+The \defn{Key-Hash Message Authentication Code} (HMAC) algorithm provides a way to
+generate a MAC by using a cryptographic hash function $h$ combined with a secret key $K$.
+Any hash function which operates block by block on a message can be used, and HMAC
+is designed so that alternative hash functions can be easily plugged in,
+enabling hash functions to be replaced when more secure ones are required.
+HMAC produces a MAC with the same length as the hash function that it uses,
+so \begin{code}HmacMD5\end{code} produces
+a $128$-bit MAC and \begin{code}HmacSHA512\end{code} produces a $512$-bit MAC.
+It starts by checking whether the length of the key is exactly one block.
+If the key is less than one block it is padded with $0$ bits on the left,
+whereas if it is more than one block $h(K)$ is calculated.
+This results in a key $K^+$ with length one block.
+Next, $K^+$ is passed through a bitwise XOR with the block
+\id{ipad}=\begin{code}3636\dots36\end{code} (in hexadecimal).
+Then the message $M$ is appended to this block
+and the hash code calculated, giving:
+\begin{displaymath}
+  h\left(K^+\oplus\id{ipad} \,||\, M\right).
+\end{displaymath}
+For efficiency with multiple messages, the hash code $h\left(K^+\oplus\id{ipad}\right)$
+can be precalculated and used as the initialization vector for the calculation of each $h(M)$.
+Separately, $K^+$ is passed through an bitwise XOR with the block
+\id{opad}=\begin{code}5C5C\dots5C\end{code}.
+The result has $h\left(K^+\oplus\id{ipad} \,||\, M\right)$ appended
+to it and the hash code calculated again to give the MAC:
+\begin{displaymath}
+  h\left(K^+\oplus\id{opad}||h\left(K^+\oplus\id{ipad} \,||\, M\right)\right).
+\end{displaymath}
+Again, for efficiency when dealing with multiple messages,
+$h\left(K^+\oplus\id{opad}\right)$ can be precalculated and used as the initialization
+vector for the calculation of each $h\left(h\left(K^+\oplus\id{ipad} \,||\, M\right)\right)$.
+The JCA supports MAC algorithms such as HMAC with the \begin{code}Mac\end{code} class:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyGenerator kg = KeyGenerator.getInstance("HmacSHA512");
+SecretKey key = kg.generateKey();
+Mac mac = Mac.getInstance("HmacSHA512");
+mac.init(key);
+byte[] message = ...;
+byte[] hashCode = mac.doFinal(message);
+\end{verbatim}\end{code}\end{quote}
+
+
+\begin{exercise}[SMS Message Authentication]
+  Enhance Exercise \ref{Ex:AESEncryptionMobile} so a Whirlpool hash code is appended
+  to the SMS message which the receiver can use to authenticate the message.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Digital Signatures                                                            %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Digital Signatures}\label{Se:DigitalSignatures}
+
+\reading{pp378-382,390-393,478-479}
+
+A \defn{digital signature} is an encrypted sequence of bytes appended to a message
+that can be used to verify the sender of the message, when the signature was created,
+and authenticate the contents of the message.
+The advent of public-key encryption made digital signatures feasible, enabling
+an identifier of the sender, a timestamp, and a hash code of the message to be together
+encrypted using the private key of the sender.
+Any process with access to the corresponding public key could then decrypt the digital
+signature, recalculate the hash code for the message and verify the authenticity
+of the message (both the authenticity of the sender and the integrity of the message).
+If confidentiality of the message were important, the message together with its
+digital signature could be encrypted before it were sent.
+
+Digital signatures also provide \defn{non-repudiation}, unless another message
+with the same hash code has been created by the receiver or an adversary,
+or else the sender has released its private key,
+it cannot deny having placed its signature on the message.
+Note that instead using symmetric encryption of a message appended with a hash code does
+allow the receiver to authenticate the message, but does not itself
+provide non-repudiation as the sender could claim that the receiver (who also
+holds the secret key) might have produced the message itself, or that it is a
+replay attack by an adversary.
+
+To avoid disputes between the sender and receiver over the validity of the timestamp
+provided in a digital signature any time-critical messages (such as on-line instructions
+for buying or selling stocks) might be sent via a mutually-trusted \defn{arbitrator},
+which itself checks the signature of the sender and puts its own timestamp on the
+message before encrypting it itself for the receiver.
+
+Any standard public-key encryption algorithm such as RSA or ECC combined with
+a cryptographic hash function such as SHA-1 can be used to create a digital signature,
+so long as recipients are aware of which encryption algorithm and hash function
+have been chosen and the correct public key is available to the recipients.
+Instead, the \defn{Digital Signature Algorithm} (DSA) is a standardized algorithm
+designed specifically for signing and verifying digital signatures which makes
+use of a hash function such as SHA-1.
+First, global public key components $p$, $q$, $g$ are created and made available
+in the system (which can be shared by all DSA users in the system) using the following steps:
+\begin{enumerate}
+  \item a $160$-bit prime number $q$ is selected (called the \defn{sub-prime}),
+  \item an $L$-bit prime number of the form $p=mq+1$ for some integer multiple $m$ is found,
+  where $L$ is either $1024$ (default for SHA-1) or else $3072$ (for SHA-256),
+  $7680$ (for SHA-384), or $15360$ (for SHA-512),
+  \item a value $n<p-1$ for which $n^m\mbox{ mod }p > 1$ is selected,
+  and the \defn{base} $g$ is taken to be $g=n^m\mbox{ mod }p$.
+\end{enumerate}
+Then the signer creates a private key $x$ by selecting a secure random number $x<q$,
+and calculates a public key $y=g^x\mbox{ mod }p$.
+In order to sign a message $M$ using a cryptographic hash function $h$ the signer
+uses the following steps:
+\begin{enumerate}
+  \item a nonce value $k<q$ is selected for the message and its multiplicative inverse
+  $k^{-1}$ in $\mathbb{Z}_q$ is calculated using the Euclidean algorithm,
+  \item the signature is the pair $(r,s)$ where $r=\left(g^k\mbox{ mod }p\right)\textrm{ mod }q$\\ and $s=\left(k^{-1}\left(h(M)+xr\right)\right)\mbox{ mod }q$.
+\end{enumerate}
+The recipient of a message $M$ can verify a signature $(r,s)$ for a received message $M$ by
+obtaining the global public elements $p$, $q$, $g$, the public key $y$, and then use
+the following steps:
+\begin{enumerate}
+  \item if $r\geq q$ or $s\geq q$ the signature is rejected,
+  \item the multiplicative inverse $s^{-1}$ of $s$ in $\mathbb{Z}_q$ is calculated,
+  \item the values $u_1=h(M)s^{-1}\mbox{ mod }q$ and $u_2=rs^{-1}\mbox{ mod }q$ are both calculated,
+  \item the value $v=\left(g^{u_1}y^{u_2}\mbox{ mod }p\right)\mbox{ mod }q$ is calculated,
+  \item the signature is accepted as valid if and only if $v=r$.
+\end{enumerate}
+The fact that correct DSA signatures do get accepted as valid can be verified once Fermat's Theorem
+is applied to show that $g^q\mbox{ mod }p=1$. The security of DSA is based on
+the difficulty of calculating the discrete logarithm $x$ given the values $g$, $p$,
+and $y=g^x\mbox{ mod }p$.
+
+An advantage to using DSA instead of a standard public-key encryption algorithm such as RSA
+is that the only computationally intensive calculations for signing a message are the calculations
+of $r$ and $k^{-1}$. Both these calculations can be performed beforehand for several
+nonce values $k$ so that messages can be quickly signed.
+
+In Java the keys required for DSA can be generated by first obtaining a
+\begin{code}KeyPairGenerator\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+\end{verbatim}\end{code}\end{quote}
+and initializing it to either generate new key components:
+\begin{quote}\begin{code}\begin{verbatim}
+kpg.initialize(1024);
+\end{verbatim}\end{code}\end{quote}
+or else use existing values of $p$, $q$, $g$:
+\begin{quote}\begin{code}\begin{verbatim}
+DSAParameterSpec dsaSpec = new DSAParameterSpec(p, q, g);
+kpg.initialize(dsaSpec);
+\end{verbatim}\end{code}\end{quote}
+Then a key pair is generated:
+\begin{quote}\begin{code}\begin{verbatim}
+KeyPair keyPair = kpg.generateKeyPair();
+PrivateKey privateKey = keyPair.getPrivate();
+PublicKey publicKey = keyPair.getPublic();
+\end{verbatim}\end{code}\end{quote}
+From the two keys the values of $p$, $q$, $g$, $x$, $y$ can be
+obtained by typecasting them to \begin{code}DSAPrivateKey\end{code}
+and \begin{code}DSAPublicKey\end{code} respectively.
+Typically the receiver is already provided with the public key $y$
+and so a \begin{code}KeyFactory\end{code} would be used instead of a
+\begin{code}KeyPairGenerator\end{code} to create the \begin{code}PublicKey\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+DSAPublicKeySpec dsaPublicSpec=new DSAPublicKeySpec(y,p,q,g);
+KeyFactory kf = KeyFactory.getInstance("DSA");
+PublicKey publicKey = kf.generatePublic(dsaPublicSpec);
+\end{verbatim}\end{code}\end{quote}
+
+To sign a message a \begin{code}Signature\end{code} object is created
+specifying the hash function (such as SHA-1) to use and is
+initialized with the private key:
+\begin{quote}\begin{code}\begin{verbatim}
+Signature signer = Signature.getInstance("SHA1withDSA");
+signer.initSign(privateKey);
+byte[] message = ...;
+signer.update(message);
+byte[] signature = signer.sign();
+\end{verbatim}\end{code}\end{quote}
+To verify a signature the \begin{code}Signature\end{code} object is
+instead initialized with the public key:
+\begin{quote}\begin{code}\begin{verbatim}
+Signature signer = Signature.getInstance("SHA1withDSA");
+signer.initVerify(publicKey);
+byte[] message = ...;
+byte[] signature = ...;
+signer.update(message);
+boolean verifies = signer.verify(signature);
+\end{verbatim}\end{code}\end{quote}
+
+The \defn{Elliptic Curve Digital Signature Algorithm} (ECDSA) is a variant of DSA
+which utilizes elliptic curves instead of using exponentiation, enabling smaller
+keys to be used for the production of signatures.
+First the chosen field (prime $p$), elliptic curve ($a$ and $b$ values),
+point $G$ with order $n$ are made available in the system.
+The signer creates a private key $x$ by selecting a random number $x<n$,
+calculates a public key $Q=xG$, and then uses the following steps:
+\begin{enumerate}
+  \item a nonce value $k<n$ is selected (relatively prime to $n$)
+  for which the point $kG=(x,y)$ has $x$-coordinate with $x\mbox{ mod }n\neq0$ and
+  for which $k^{-1}\left(h(M)+x^2\right)\mbox{ mod }n\neq0$,
+  \item the signature is $(r,s)$ where $r=x\mbox{ mod }n$ and
+  $s=k^{-1}\left(h(M)+xr\right)\mbox{ mod }n$.
+\end{enumerate}
+The signature can then be validated by calculating
+$u_1=h(M)s^{-1}\mbox{ mod }n$ and $u_2=r s^{-1}\mbox{ mod }n$,
+and checking whether the $x$-coordinate of $u_1G+u_2Q$ is $r$.
+ECDSA is supported by the Bouncy Castle Lightweight API.
+
+The class \begin{code}DSAFileSigner\end{code} demonstrates how DSA can be used to add
+a signature to a text file, and later verify that the signature is still valid.
+If between the signing and the verification the file is modified in some way
+the signature will no longer be correct (unless a collision is found).
+In this example the signature has been stored using a Base 64 encoding,
+which stores the signature as printable text characters rather than a
+\begin{code}byte[]\end{code} array.
+For simplicity it has used the non-standard \begin{code}sun.misc\end{code} classes
+\begin{code}BASE64Encoder\end{code} and \begin{code}BASE64Decoder\end{code}
+to perform the encoding and decoding between a \begin{code}byte[]\end{code}
+array and a \begin{code}String\end{code} of printable characters.
+These classes might not be supported in some Java virtual machines
+and so should not be used in a production environment.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates how DSA can be used to add a digital
+   signature to a text file, using line "SIGNATURE:" followed by base
+   64 encoding of signature, and verify if signature is still valid.
+   @author Andrew Ensor
+*/
+...
+public class DSAFileSigner
+{
+   public static String SIG_HEADER = "SIGNATURE:";
+   private PrivateKey privateKey;
+   private PublicKey publicKey;
+
+   public DSAFileSigner()
+   {  try
+      {  // generate the public and private keys for DSA
+         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+         kpg.initialize(1024);
+         KeyPair keyPair = kpg.generateKeyPair();
+         privateKey = keyPair.getPrivate();
+         publicKey = keyPair.getPublic();
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+   }
+
+   // returns a Base64 encoded DSA signature for chars obtained from
+   // reader and then closes the reader stream
+   public String sign(Reader reader) throws IOException
+   {  byte[] signature = null;
+      BufferedReader br = new BufferedReader(reader);
+      try
+      {  Signature signer = Signature.getInstance("SHA1withDSA");
+         signer.initSign(privateKey);
+         String line = br.readLine();
+         while (line != null)
+         {  signer.update(line.getBytes());
+            line = br.readLine();
+         }
+         signature = signer.sign();
+      }
+      ...
+      finally
+      {  try
+         {  br.close();
+         }
+         catch (IOException e)
+         {} // ignore
+      }
+      return (new BASE64Encoder()).encode(signature);
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   // obtains the information from reader until the signature header
+   // is found, and then tries to verify the signature
+   public boolean verify(Reader reader) throws IOException
+   {
+      BufferedReader br = new BufferedReader(reader);
+      try
+      {  Signature signer = Signature.getInstance("SHA1withDSA");
+         signer.initVerify(publicKey);
+         String line = br.readLine();
+         while (line!=null && !line.equals(SIG_HEADER))
+         {  signer.update(line.getBytes());
+            line = br.readLine();
+         }
+         if (line == null)
+            System.out.println("No signature found");
+         else
+         {  // obtain the signature from the remaining information
+            StringBuffer sigString = new StringBuffer();
+            line = br.readLine();
+            while (line != null)
+            {  sigString.append(line);
+               line = br.readLine();
+            }
+            byte[] signature = (new BASE64Decoder()).decodeBuffer
+               (sigString.toString());
+            return signer.verify(signature);
+         }
+      }
+      catch (NoSuchAlgorithmException e)
+      {  System.err.println("Encryption algorithm not available: "+e);
+      }
+      catch (InvalidKeyException e)
+      {  System.err.println("Invalid key: "+e);
+      }
+      catch (SignatureException e)
+      {  System.err.println("Signature algorithm exception: "+e);
+      }
+      finally
+      {  try
+         {  br.close();
+         }
+         catch (IOException e)
+         {} // ignore
+      }
+      return false;
+   }
+   ...
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\noindent
+\begin{minipage}{95mm}
+A \defn{Base 64} encoding is a binary to text encoding scheme where
+an arbitrary number of bytes is converted into a sequence of printable
+characters, using the 64 printable characters
+\begin{code}A,B,\dots,Z,a,b,\dots,z,0,1,\dots,9,+,/\end{code}
+(formats such as MIME and PGP use these characters but other encoding schemes might use
+different characters instead of \begin{code}+\end{code} and \begin{code}/\end{code}).
+Given a \begin{code}byte[]\end{code} array to be encoded (such as a digital signature
+or other \begin{code}byte\end{code} data), a $24$-bit buffer is used to process the bits
+in the array.
+The bytes are processed in blocks of three bytes at a time and converted into four printable
+characters by splitting the buffer into four $6$-bit parts and using a table of the
+corresponding character encodings for each $6$-bit value.
+If the length of the array is not a multiple of three then either one or two
+\begin{code}0\end{code} bytes is appended to make a full block and the encoded
+output ends with that number of \begin{code}=\end{code} characters
+to indicate the number of padding bytes.\nudgedown{1}
+\end{minipage}
+\hfill
+\begin{tabular}{|c|c|} \hline
+  \multicolumn{2}{|l|}{\textit{Base 64 Encoding}} \\ \hline\hline
+  \textit{6-bit Value} & \textit{Character} \\ \hline
+  \begin{code}000000\end{code} & \begin{code}A\end{code} \\
+  \begin{code}000001\end{code} & \begin{code}B\end{code} \\
+  \vdots & \vdots \\
+  \begin{code}011001\end{code} & \begin{code}Z\end{code} \\
+  \begin{code}011010\end{code} & \begin{code}a\end{code} \\
+  \begin{code}011011\end{code} & \begin{code}b\end{code} \\
+  \vdots & \vdots \\
+  \begin{code}110011\end{code} & \begin{code}z\end{code} \\
+  \begin{code}110100\end{code} & \begin{code}0\end{code} \\
+  \begin{code}110101\end{code} & \begin{code}1\end{code} \\
+  \vdots & \vdots \\
+  \begin{code}111101\end{code} & \begin{code}9\end{code} \\
+  \begin{code}111110\end{code} & \begin{code}+\end{code} \\
+  \begin{code}111111\end{code} & \begin{code}/\end{code} \\ \hline
+\end{tabular}
+
+For example, the bytes \begin{code}73,65,63,75,72,69,74,79\end{code}
+(the hexadecimal representation of the string \begin{code}security\end{code})
+would be encoded as follows:
+\begin{center}
+\newcommand{\sz}{\makebox[-2.6mm]{\scriptsize0}}
+\newcommand{\so}{\makebox[-2.6mm]{\begin{scriptsize}1\end{scriptsize}}}
+\noindent
+\begin{tabular}{cccccccc|cccccccc|cccccccc||cccccccc|cccccccc|cccccccc||cccccccc|cccccccc|cccccccc}
+  \multicolumn{8}{c|}{\begin{code}73\end{code}} &
+  \multicolumn{8}{c|}{\begin{code}65\end{code}} &
+  \multicolumn{8}{c||}{\begin{code}63\end{code}} &
+  \multicolumn{8}{c|}{\begin{code}75\end{code}} &
+  \multicolumn{8}{c|}{\begin{code}72\end{code}} &
+  \multicolumn{8}{c||}{\begin{code}69\end{code}} &
+  \multicolumn{8}{c|}{\begin{code}74\end{code}} &
+  \multicolumn{8}{c|}{\begin{code}79\end{code}} &
+  \multicolumn{8}{c}{\begin{code}00\end{code}} \\
+  \sz & \so & \so & \so & \sz & \sz & \so & \so &
+  \sz & \so & \so & \sz & \sz & \so & \sz & \so &
+  \sz & \so & \so & \sz & \sz & \sz & \so & \so &
+  \sz & \so & \so & \so & \sz & \so & \sz & \so &
+  \sz & \so & \so & \so & \sz & \sz & \so & \sz &
+  \sz & \so & \so & \sz & \so & \sz & \sz & \so &
+  \sz & \so & \so & \so & \sz & \so & \sz & \sz &
+  \sz & \so & \so & \so & \so & \sz & \sz & \so &
+  \sz & \sz & \sz & \sz & \sz & \sz & \sz & \sz \\
+  \multicolumn{6}{c}{\begin{code}c\end{code}} &
+  \multicolumn{6}{c}{\begin{code}2\end{code}} &
+  \multicolumn{6}{c}{\begin{code}V\end{code}} &
+  \multicolumn{6}{c||}{\begin{code}j\end{code}} &
+  \multicolumn{6}{c}{\begin{code}d\end{code}} &
+  \multicolumn{6}{c}{\begin{code}X\end{code}} &
+  \multicolumn{6}{c}{\begin{code}J\end{code}} &
+  \multicolumn{6}{c||}{\begin{code}p\end{code}} &
+  \multicolumn{6}{c}{\begin{code}d\end{code}} &
+  \multicolumn{6}{c}{\begin{code}H\end{code}} &
+  \multicolumn{6}{c}{\begin{code}k\end{code}} &
+  \multicolumn{6}{c}{\begin{code}=\end{code}}
+\end{tabular}\end{center}
+
+\noindent
+resulting in the printable string \begin{code}c2VjdXJpdHk=\end{code}.
+Formats such as MIME also insert a newline (a combination of carriage return and newline characters)
+every 76 encoded characters so that the resulting strings are not too long for
+e-mail systems.
+
+
+\begin{exercise}[Base 64 Encoding]
+Prepare a program that performs Base 64 encoding and decoding.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Certificates and Key Storage                                                   %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Certificates and Key Storage}\label{Se:CertificatesKeyStorage}
+
+\reading{pp419-430}
+
+A \defn{(public-key) certificate} is a document that contains an identifier for a process
+and its public key, together with a digital signature of the information
+prepared by a signer that is trusted to ensure the authenticity of
+the identifier and the public key.
+The signer is often a \defn{certificate authority} (CA), a well-known
+service that is entrusted to securely check information before signing and issuing
+a certificate. The CA prepares a digital signature using a public key that has been securely
+distributed around the system as a \defn{self-signed} or \defn{root} certificate,
+a certificate containing the public key and signed using the corresponding private key.
+Certificates make public-key encryption practical in large distributed systems,
+where it is usually infeasible to securely distribute secret keys.
+A process can pass its public key to another process simply by sending a
+certificate that has been signed by a CA trusted by the other process.
+When a certificate is received the digital signature can be verified using the
+public key of the CA to check the authenticity of the identifier and public key.
+
+The most commonly used standard format for public-key certificates is \defn{X.509}
+\begin{figure*}[htb]\begin{center}
+\begin{tabular}{|l|} \hline
+  Version: \emph{1 (default), 2, or 3} \\
+  Serial Number: \emph{integer ID unique amongst certificates issued by that CA} \\
+  Signature Algorithm: \emph{identifier for algorithm used to sign certificate} \\
+  Issuer: \emph{X.500 name of certificate issuer that created and signed certificate} \\ \hline
+  Validity \\
+  \qquad Not Before: \emph{first date from which certificate is valid} \\
+  \qquad Not After: \emph{last date on which certificate is valid} \\ \hline
+  Subject: \emph{name of subject for whom the certificate is issued} \\ \hline
+  Subject Public Key Info \\
+  \qquad Public Key Algorithm: \hspace{-1mm}\emph{identifier for algorithm used to create public key}\\
+  \qquad Key: \emph{public key for the subject} \\ \hline
+  Issuer Unique Identifier: \emph{optional unique name for certificate issuer} \\
+  Subject Unique Identifier: \emph{optional unique name for certificate subject} \\ \hline
+  \emph{Extensions to X.509 certificate} \\ \hline
+  Signature Algorithm: \emph{identifier for algorithm used to sign certificate} \\
+  Signature: \emph{digital signature of other fields of certificate} \\ \hline
+\end{tabular}\end{center}
+\end{figure*}
+which holds details about the issuer of the certificate, the period of validity of
+the certificate, details about the subject for whom the certificate is issued
+including its public key, followed by a digital signature of the information
+signed using the issuer's private key.
+X.509 is particularly convenient for algorithms such as ECC and DSA whose
+keys have multiple components as all the components get included in a single
+certificate.
+
+The \begin{code}java.security.cert\end{code} package contains the class
+\begin{code}X509Certificate\end{code} that represents an X.509 certificate.
+The \begin{code}getEncoded\end{code} method of \begin{code}PublicKey\end{code}
+can be used to obtain a single \begin{code}byte[]\end{code} array for an X.509 public key
+specification holding all the components of the public key (but the specification is not
+itself an X.509 certificate as it only holds the public key information and is not signed):
+\begin{quote}\begin{code}\begin{verbatim}
+byte[] publicKeyBytes = publicKey.getEncoded();//X.509 format
+String publicKeyAlg = publicKey.getAlgorithm();
+\end{verbatim}\end{code}\end{quote}
+This \begin{code}byte[]\end{code} array can later be used to reconstruct the public key
+if the algorithm that was used to create the key is known:
+\begin{quote}\begin{code}\begin{verbatim}
+X509EncodedKeySpec publicKeySpec
+   = new X509EncodedKeySpec(publicKeyBytes);
+KeyFactory keyFactory = KeyFactory.getInstance(publicKeyAlg);
+PublicKey publicKey=keyFactory.generatePublic(publicKeySpec);
+\end{verbatim}\end{code}\end{quote}
+If instead an X.509 certificate has been received via an \begin{code}InputStream\end{code}
+then the \begin{code}X509Certificate\end{code} can be reconstructed
+using a \begin{code}CertificateFactory\end{code}, in which
+case the validity of the certificate can be verified if the public key of the signer is known:
+\begin{quote}\begin{code}\begin{verbatim}
+InputStream is = ...; // byte stream of X.509 certificate
+CertificateFactory certFactory
+   = CertificateFactory.getInstance("X.509");
+X509Certificate certificate
+   = (X509Certificate)certFactory.generateCertificate(is);
+PublicKey signerPublicKey=...;//securely obtained from signer
+PublicKey certPublicKey = certificate.getPublicKey();
+boolean notExpired = certificate.checkValidity();
+boolean validSignature=certificate.verify(signerPublicKey);
+\end{verbatim}\end{code}\end{quote}
+
+It is usually not practical to insist that all certificates in a large system
+be signed and issued by a single CA. Hence it may occur that a process needs to verify
+a certificate signed by a CA, but the process only has the public key for another
+signer. In this case a \defn{certificate chain} can be used, which is a sequence
+of certificates where each certificate in the chain can be verified using the public key
+that is the subject in the following certificate,
+where the last certificate in the chain is already trusted.
+For instance, if a process $A$ has a trusted certificate for process $B$
+then it can use the public key of $B$ in that certificate to verify any certificate
+that has been signed by $B$ (using the corresponding private key of $B$).
+If process $B$ signed a certificate for process $C$ then when $A$ received this certificate
+it could verify the signature and thus obtain the public key of $C$ from the certificate.
+Thus $A$ could then verify any certificates it received that were signed by $C$.
+In this way when a certificate is received by a process it can check whether there
+is a certificate chain that leads to a certificate that it trusts.
+
+As the validity of each certificate in a certificate chain is essential
+a CA typically has a \defn{certificate revocation list} (CRL),
+which it maintains with an up-to-date list of certificates that it no longer considers
+valid (such as if the private key were found to have been compromised,
+or the certificate details were found to have been falsified).
+To verify a certificate it is therefore important to check that it is not
+in the CRL of the signer.
+The procedures for creating, managing, storing, distributing, verifying,
+and revoking certificates
+using standardized certificate formats, certificate authorities, and
+certificate revocation lists are collectively known as
+\defn{public-key infrastructure} (PKI).
+
+A \defn{keystore} is a password-protected file or database that stores keys
+and trusted certificates.
+A Java keystore can be conveniently managed using the command line \begin{code}keytool\end{code}
+utility (found in the \begin{code}bin\end{code} folder of the Java SDK).
+Every entry in a keystore is assigned a unique string \defn{alias}
+to identify it, which is specified with the \begin{code}-alias\end{code} option.
+A new keystore is automatically created if one with the specified name does not
+already exist when a new key pair is generated or a certificate is imported.
+The password for a keystore can be changed using the \begin{code}-storepasswd\end{code}
+option
+(note in practice \begin{code}keytool\end{code} should be left to
+prompt for the passwords rather than passwords provided directly via the
+option \begin{code}-storepass\end{code} in a command-line shell,
+as the operating system might cache previous commands so leave the password
+exposed):
+\begin{quote}\begin{code}
+keytool -storepasswd -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+The entries in a keystore can be listed using the \begin{code}-list\end{code} option:
+\begin{quote}\begin{code}
+keytool -list -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+which displays the number of entries currently in the key store and an MD5 signature
+for each.
+Also including the \begin{code}-v\end{code} option displays the entries in
+a human-readable format, whereas including the \begin{code}-rfc\end{code} option
+displays the entries using Base 64 encoding.
+
+A new public/private key pair is created using the
+option \begin{code}-genkeypair\end{code}, where the key pair
+generation algorithm to use is specified with the \begin{code}-keyalg\end{code} option.
+Besides generating a public/private key pair, the private key is stored securely using
+a password and the public key is placed in a self-signed certificate,
+signed using the private key.
+For example, a command line statement such as:
+\begin{quote}\begin{code}
+keytool -genkeypair -alias \emph{mykeyalias} -keyalg RSA \\
+\trind  -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+generates a new key pair for RSA encryption together with a self-signed certificate,
+where both the private key and the self-signed certificate are assigned the specified alias
+of the entry.
+If the certificate is to be deployed to a server such as \begin{code}http://localhost\end{code}
+then the first and last name of the subject must exactly match \begin{code}localhost\end{code}
+(or the option \begin{code}-dname "cn=localhost"\end{code} be included),
+otherwise the certificate would be rejected during verification.
+Any key pair or signature algorithm that is supported by a registered
+Java cryptographic security provider can be used.
+
+A certificate can be exported from a keystore to a binary certificate file
+using the \begin{code}-export\end{code} option, specifying the alias of the
+entry and the name of the new certificate file:
+\begin{quote}\begin{code}
+keytool -export -alias \emph{mykeyalias} -file \emph{mycertfile.cer} \\
+\trind  -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+The contents of the certificate file can be displayed using the
+\begin{code}-printcert\end{code} option:
+\begin{quote}\begin{code}
+keytool -printcert -file \emph{mycertfile.cer}
+\end{code}\end{quote}
+Certificate files exported from another keystore that are trusted can also be imported
+into the keystore with the \begin{code}-import\end{code} option:
+\begin{quote}\begin{code}
+keytool -import -alias \emph{mykeyalias} -file \emph{mycertfile.cer} \\
+\trind  -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+The \begin{code}keytool\end{code} utility attempts to build a certificate chain for
+the new certificate from a self-signed certificate and already trusted certificates
+in the keystore.
+If it fails to establish a certificate chain, then the certificate information
+is displayed and the user prompted to verify it
+(by independently checking the signature with the alleged issuer of the certificate).
+Some self-signed certificates for several popular CA are available in the
+\begin{code}cacerts\end{code} keystore included with the Java Runtime
+(found in the \begin{code}jre\bsl lib\bsl security\end{code} folder
+and with the initial keystore password \begin{code}"changeit"\end{code}).
+
+A standardized \defn{certificate authentication request} (CAR) for requesting
+a certificate to be signed and issued by a certificate authority can be prepared
+using the \begin{code}-certReq\end{code} option:
+\begin{quote}\begin{code}
+keytool -certReq -alias \emph{mykeyalias} -file \emph{mycertreq.csr} \\
+\trind  -keystore \emph{mykeystore.jks}
+\end{code}\end{quote}
+When the reply has been received from the CA the self-signed certificate
+in the keystore can be replaced by the certificate chain signed by the CA.
+
+The \begin{code}KeyStore\end{code} class can be used by a program to access
+a keystore independently of how it stores entries.
+Either the default type of keystore can be used or else a particular type can be specified
+(such as \begin{code}"JKS"\end{code} for a Java Key Standard keystore as produced by
+\begin{code}keytool\end{code}, or \begin{code}"PKCS12"\end{code} for a keystore
+in the PKCS\#12 format).
+A default type of keystore can be loaded with the following statements:
+\begin{quote}\begin{code}\begin{verbatim}
+String keyStoreName = ...;
+char[] storepw = ...; // don't store password in a String
+FileInputStream fis = new FileInputStream(keyStoreName);
+KeyStore keystore
+   = KeyStore.getInstance(KeyStore.getDefaultType());
+keystore.load(fis, storepw);
+fis.close();
+\end{verbatim}\end{code}\end{quote}
+(passing a \begin{code}null\end{code} \begin{code}InputStream\end{code}
+creates an empty keystore).
+Once a keystore has been loaded an \begin{code}Enumeration<String>\end{code} of its aliases
+can be obtained using the \begin{code}aliases\end{code} method.
+Existing keys and certificates can be read using the alias for each entry:
+\begin{quote}\begin{code}\begin{verbatim}
+String keyAlias = ...;
+char[] keypw = ...; // don't store password in a String
+Key key = keystore.getKey(keyAlias, keypw);
+String certAlias = ...;
+Certificate certificate = keystore.getCertificate(certAlias);
+\end{verbatim}\end{code}\end{quote}
+New entries can also be added to the keystore or existing entries modified:
+\begin{quote}\begin{code}\begin{verbatim}
+Key key = ...;
+Certificate[] chain = ...; // certificate chain if PrivateKey
+keystore.setKeyEntry(keyAlias, key, keypw, chain);
+Certificate certificate = ...;
+keystore.setCertificateEntry(certificate, certAlias);
+\end{verbatim}\end{code}\end{quote}
+which is convenient for providing secure persistent storage of keys.
+If changes have been made they can be saved to the keystore:
+\begin{quote}\begin{code}\begin{verbatim}
+FileOutputStream fos = new FileOutputStream(keyStoreName);
+keystore.store(fos, storepw);
+fos.close();
+\end{verbatim}\end{code}\end{quote}
+
+The \defn{Java Certification Path API} consists of classes and interfaces
+in the package \begin{code}java.security.cert\end{code} for verifying certificate chains.
+The \begin{code}CertPath\end{code} class represents a certificate chain, ordered
+starting with the target certificate and ending with a certificate signed by
+a trusted CA, so that the signer of one certificate has its public key as the subject
+in the next certificate in the chain.
+For example, the following code fragment obtains a certificate chain from a keystore
+and uses it to create a \begin{code}CertPath\end{code} object:
+\begin{quote}\begin{code}\begin{verbatim}
+String certAlias = ...;
+Certificate[] chain=keystore.getCertificateChain(certAlias);
+CertificateFactory cf
+   = CertificateFactory.getInstance("X.509");
+CertPath path = cf.generateCertPath(Arrays.asList(chain));
+\end{verbatim}\end{code}\end{quote}
+Once a \begin{code}CertPath\end{code} has been created it can be
+validated by the PKI X.509 certification path validation algorithm, which throws
+a \begin{code}CertPathValidatorException\end{code} if the validation fails:
+\begin{quote}\begin{code}\begin{verbatim}
+PKIXParameters params = new PKIXParameters(keystore);
+params.setRevocationEnabled(false); // no CRL
+CertPathValidator validator = CertPathValidator.getInstance
+   (CertPathValidator.getDefaultType());
+PKIXCertPathValidatorResult vr=(PKIXCertPathValidatorResult)
+   validator.validate(path, params); // exception if fails
+X509Certificate trustedCert
+   = vr.getTrustAnchor().getTrustedCert();
+\end{verbatim}\end{code}\end{quote}
+The Certification Path API also provides support for certificate
+revocation lists, including the
+\defn{Online Certificate Status Protocol} (OCSP) for determining the
+current status of a certificate.
+
+
+\begin{exercise}[Distributing Certificates]
+Modify \begin{code}DSAFileSigner\end{code} from Section \ref{Se:DigitalSignatures}
+so that it uses a DSA key pair that is generated by \begin{code}keytool\end{code}
+and stored in a keystore.
+Then export the DSA public key certificate to another keystore which is
+used by another program to verify the signature of the file.
+\end{exercise}

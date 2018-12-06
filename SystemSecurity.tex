@@ -1,0 +1,933 @@
+% This is the LaTeX file for the chapter:
+%   System Security
+% for the manual:
+%   Highly Secure Systems
+% Written by Andrew Ensor
+% Last updated December 7, 2018.
+
+\chapter{System Security}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Intruders and Malicious Software                                              %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Intruders and Malicious Software}
+
+\reading{pp566-591,599-619}
+
+An \defn{intruder} is an individual who gains unauthorized access to a computer system,
+either by exploiting the account of a legitimate user (a \defn{masquerader}), being
+a legitimate user who accesses the system in a way that is unauthorized
+(a \defn{misfeasor}), or else by obtaining some type of administration access to the
+system which can be used to evade detection (a \defn{clandestine user}).
+
+Some systems might include a \defn{back door} which provides a (non-obvious) way to bypass
+the normal authentication requirements of the system.
+Back doors are sometimes included by a programmer during development and testing of a system,
+either to speed up testing or else to provide access in case there might be a problem with
+the authentication process.
+In other systems, back doors might occur due to subtle security flaws resulting from
+a developer's failure to grasp complex security issues.
+For instance, an intruder might gain access to security policy settings or
+be able to forge a authentication ticket.
+Back doors can also be set up by malicious software such as viruses or worms
+when the access controls for a system have been compromised.
+Instead, a malicious compiler could insert a back door into an application, which would be
+difficult to detect as no evidence would appear in any source code of the application.
+
+If a back door to a system cannot be found then the intruder must somehow gain access
+via the authentication procedures of the system. Typically this is achieved by
+the intruder obtaining the password of a legitimate user.
+Attempts to guess a password during user authentication can be easily detected
+by a system, which can foil a brute force attempt by insisting that each authentication
+attempt take a certain time period, and/or disconnecting or temporarily invalidating
+a user account after several failed attempts.
+Although a system may try to prevent access to its files that store user passwords,
+this cannot be relied on as a security lapse might make such a file available within
+the system, an administrator with access to all files might use the same password
+on another system which has already been compromised,
+or a misfeasor might be able to impersonate software which is granted
+read access to a password file for the purpose of authentication.
+To prevent actual user passwords from becoming available to a potential intruder,
+they are never stored as plaintext in a file. Instead, either only their hash codes
+or some encrypted form of them (such as by password based encryption) is ever stored:
+
+\begin{center}
+\begin{tabular}{|l|l|l|} \hline
+  \textit{Host} & \textit{User} & \textit{Password} \\ \hline\hline
+  156.62.\%     & student       & \begin{code}6E41903A2A2A67A4\end{code} \\
+  156.62.\%     & admin         & \begin{code}175EA45B7CDF2B4A\end{code} \\ \hline
+\end{tabular}
+\end{center}
+
+\noindent
+The security of the passwords in a password file can be improved by assigning a
+random salt to each user, making the salts available to authentication software,
+and using them in the calculation of the encrypted passwords.
+Thus two users which happen to have the same password in a system would not
+have the same encrypted form in the file, and if the password file were obtained
+by an intruder any attempt to crack a password would have to focus on one user at a time.
+
+One significant problem with password-based authentication is that many users
+choose passwords that can be easily cracked by guessing, often choosing a password based
+on their own or someone else's name, relevant personal information such as an address,
+dictionary words, or simple variations of these using a mixture of upper and lower case.
+If a copy of the password file for a system could be obtained then millions of
+potential passwords could be checked by the intruder off-line. Studies
+have shown that up to 25\% of user-chosen passwords can be cracked using
+password lists commonly available to potential intruders.
+
+Password cracking can be countered by having a system insist on \defn{password selection rules},
+where a password selected by a user is scrutinized for its suitability before it
+gets accepted. Some common rules are to insist that
+every password be at least eight characters long (to counter a brute-force attack),
+that it not appear in a common password list nor in a dictionary, include
+a mix of upper and lower case and include at least one non-letter character.
+To avoid storing an enormous list of non-allowable passwords a \defn{Bloom filter}
+could be used, where several (short) hash functions are used to
+calculate various hash codes for a password. Each hash function has an associated
+hash table with a bit allocated for each of the possible hash codes it can produce.
+A bit is set in each table corresponding to the hash code for each non-allowable password.
+When a submitted password is scrutinized its hash codes are calculated, and if
+the corresponding bit in every one of the tables is set then the password gets rejected.
+
+The introduction of smart cards and/or biometric identification has greatly improved
+the security of password-based authentication, reducing many of the security risks
+associated with passwords and password files.
+For instance a smart card can render itself invalid if incorrect pin are repeatedly provided,
+it can ensure all communication with a host is confidential and authenticated,
+and biometric information such as fingerprint or facial recognition can be
+very difficult for an intruder to forge.
+
+Although intrusion prevention is very important, a system should also have measures
+in place for detecting intruders once they have successfully entered, and take
+action to minimize the effects of the intrusion.
+One technique for intrusion detection is to store some information about the
+typical behaviour of each user, such as what applications and files are normally
+used by that user, and when that user typically logs in and out of the system.
+Then during each session the behaviour of a user is compared with their past
+behaviour and anything unusual (such as after hours access) might indicate that
+an intruder is masquerading as that user.
+Another technique is to enforce rules on proper user behaviour where multiple unusual actions
+might indicate an intruder, such as the copying of system files, attempts
+to access the password file, or writing to another user's files.
+Both these techniques rely on the system maintaining a log of significant
+events, such as authentication and authorization requests, unusual network communication,
+and access to/from outside the network.
+However, intruders that gain administration access rights might be able to modify
+the log files and hide their own actions.
+A security-conscious system might include \defn{honeypots}, which are
+machines or even entire fabricated subsystems designed to appear attractive
+to intruders but which would be unknown to typical users,
+luring intruders away from actual critical parts of the system and noting their
+behaviour while countermeasures are taken against them.
+
+Unfortunately, probabilistic measures for determining intruders suffer from
+\defn{base-rate fallacy}, where the number of false alarms can be unsatisfactorarily high.
+Bayes' Theorem is a result from probability theory for mutually
+exclusive events $E_1$, $E_2$, \dots, $E_n$, one of which must occur
+(so the sum of their probabilities is $1$). For an arbitrary event $A$ it states that:
+\begin{displaymath}
+  \mbox{Prob}(E_i \mbox{ given } A) =
+  \frac{\mbox{Prob}(A \mbox{ given } E_i)\cdot\mbox{Prob}(E_i)}
+  {\sum_{j=1}^{n}\mbox{Prob}(A \mbox{ given } E_j)\cdot\mbox{Prob}(E_j)}.
+\end{displaymath}
+To illustrate base-rate fallacy suppose a test is devised for detecting
+intruders, where an actual intruder is correctly detected by the test $95\%$ of the
+time, so $\mbox{Prob}(\mbox{detected given intruder})=0.95$,
+and a legitimate user is also correctly detected $95\%$ of the time.
+Suppose the proportion of intruders compared to legitimate users is low,
+such as only $2\%$ of users are actually intruders.
+Bayes' Theorem can be used to give the probability that a user which has been detected
+as being an intruder is actually legitimate:
+
+\begin{scriptsize}\begin{eqnarray*}
+  \lefteqn{\mbox{Prob}(\mbox{legitimate given detected})} \\
+  &=& \frac{\mbox{Prob}(\mbox{detected given legitimate})\cdot\mbox{Prob}(\mbox{legitimate})}
+  {\mbox{Prob}(\mbox{detected given legit} )\cdot\mbox{Prob}(\mbox{legit}) +
+  \mbox{Prob}(\mbox{detected given intruder} )\cdot\mbox{Prob}(\mbox{intruder})} \\
+  &=& \frac{0.05\times0.98}{0.05\times0.98+0.95\times0.02} \\
+  &=& 0.7205,
+\end{eqnarray*}\end{scriptsize}
+so about $72\%$ of the detected intruders are actually legitimate users.
+
+Rather than intruders themselves trying to gain access into a system they
+might instead try to introduce malicious software.
+Some categories of malicious software are:
+\begin{description}
+  \item[Logic bomb] which contains code set to activate when certain conditions are
+  met, such as at a particular time or when a certain application is utilized.
+  \item[Trojan horse] which is software that appears useful to a user but which
+  contains some hidden code that performs an unexpected function.
+  \item[Key logger] which captures and stores keystrokes that are made on a machine,
+  enabling an attacker to catch the password and confidential details typed by a user.
+  \item[Zombie] which is software that secretly takes over a machine on a network,
+  and which can be used by an attacker to launch attacks on other machines.
+  Zombies are used by attackers to make it more difficult to trace their
+  actual location and to have multiple machines at their disposal for attacking a target.
+  To find a new zombie an attacker might scan a network for vulnerable machines or else
+  use a known hit-list of poorly protected sites.
+  \item[Virus] which is software that embeds itself in an executable program
+  so that whenever the program is executed by a user the virus code is also performed.
+  A virus might be introduced into a system and mistakenly executed by an
+  application that automatically executes macro commands attached to an e-mail or spreadsheet.
+  It propagates itself by locating some accessible executable programs on the user's
+  account and tries to rewrite them by adding its own commands to the start
+  of the executable file, thus infecting further files and possibly
+  lodging itself inside operating system software.
+  \item[Worm] which can replicate itself automatically (without requiring any action
+  to be performed by a user) and send copies of itself over a network.
+  A worm actively seeks out more machines to infect (for example, by using a
+  user's e-mail contact list or by randomly generating IP addresses),
+  and might replicate itself using e-mail
+  or via some remote execution or remote login capability of the system.
+  It might disguise itself as a system process running in the background,
+  actively try to crack passwords, communicate with the command interpreter of the
+  operating system, download further versions of itself,
+  or exploit flaws in system software
+  (for instance, several worms have very successfully exploited security flaws
+  in Microsoft Internet Information Server software).
+  Worms are often used to install back doors on machines, so that they can be used as zombies
+  for sending spam or to exploit a possible buffer overflow vulnerability of the operating system.
+\end{description}
+In a \defn{distributed denial of service} (DDOS) attack many zombies
+are used to swamp a target machine with network communication in order to
+disrupt the functionality of the target and its availability to legitimate clients.
+The communication might be TCP/IP synchronization/initialization packets with false IP return
+address, or instead ECHO packets sent to innocent \defn{reflectors} giving the target machine
+as the return address, so each reflector then sends an ECHO response
+to the target. To counter such attacks a potential target needs to have backup
+resources available in the event of an attack, be able to quickly identify a
+potential DDOS attack, and filter received communication to minimize its effects.
+
+Early antivirus software tried to detect malicious software by scanning for occurrences
+of known virus code, but virus and worms were quickly developed by attackers that
+modified themselves to evade detection, such as by randomly changing some code or else
+encrypting parts of themselves using a randomly selected key (thus making
+each virus unique and potentially mutating with each execution).
+Some viruses compressed the original executable file before they embedded themselves,
+decompressing the file again when executed, thus making it impossible to tell from
+file sizes whether or not a file was infected.
+Hence antivirus software was developed which could scan executable files and inspect
+their code, such as checking whether they started by performing some
+decryption or decompression, and if so find the key embedded within the malicious software
+and expose the virus code.
+Another approach was to calculate a hash code for each executable file and securely store
+it, or use a digital signature, so that modified files could be identified.
+Modern antivirus software can track the actions being performed by
+an executable program as it runs to catch suspicious activity (called a \defn{activity trap}).
+Instead, an executable might be initially run using a software CPU emulator when started
+to try catching any virus before it gets a chance to cause damage to the system.
+The longer the executable is left in the emulator the greater the chance that
+virus activity gets detected, but the slower the execution of valid code.
+Such features are sometimes incorporated into distributed system software,
+with antivirus software running in the background on each machine to detect suspicious
+activities and unexpected background processes, monitors checking network traffic,
+and dedicated machines that are passed suspicious software for analysis and which
+alert the entire system when new malicious code is found.
+
+
+\begin{exercise}[Determining Software Emulation]
+Determine a way which a virus might be able to decide whether it was being executed
+on a software CPU emulator so that it could disguise itself, and a counter measure that
+could be taken by the emulator to detect such a disguise.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Securing Code                                                                 %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Securing Code}\label{Se:SecuringCode}
+
+\reading{none}
+
+Besides digital signatures being used to authenticate users and messages, they are
+also widely used to authenticate code. \defn{Code signing} ensures the
+recipient of a JAR file (such as a Java application, MIDlet suite, or browser applet),
+or of a C\# assembly that the code did originate from the signer
+and it has not been tampered with enroute since the code was signed.
+Code is signed by the sender using the private key of a key pair, and can be verified
+by a recipient if the recipient possesses a trusted certificate for the corresponding public key.
+
+A JAR file can be signed using the command line \begin{code}jarsigner\end{code} utility
+(found in the \begin{code}bin\end{code} folder of the Java SDK), specifying the
+keystore and passwords, an optional name for the signed JAR,
+the name of the JAR file to sign, and the alias of the private key to use for signing:
+\begin{quote}\begin{code}
+jarsigner  -keypass \emph{mykeypw} -keystore \emph{mykeystore.jks} \\
+\trind -storepass \emph{mystorepw} -signedjar \emph{SignedJARName.jar} \\
+\trind \emph{JARName.jar} \emph{mykeyalias}
+\end{code}\end{quote}
+Most IDEs such as Eclipse and the Wireless Toolkit have menu options for
+facilitating the signing of JAR files, as well as the management of certificates and key pairs.
+When a signed JAR file is received the \begin{code}jarsigner\end{code} utility
+can also be used to verify the signature, and optionally display the certificates that
+formed the certificate chain validating the signature:
+\begin{quote}\begin{code}
+jarsigner -keystore \emph{mykeystore.jks} -storepass \emph{mystorepw} \\
+\trind -certs -verify \emph{SignedJARName.jar}
+\end{code}\end{quote}
+Usually browsers and mobile devices have their own trusted certificates
+that they use to verify the signature of code they obtain, so the verification is
+performed automatically and the user notified as to whether the signature was verified.
+It must however be remembered that code signing only guarantees authenticity that the code
+is indeed from the signer, not that the code itself does not perform any malicious function,
+so a valid signature should not considered a complete guarantee about the code.
+
+.NET also supports code signing. The command line \begin{code}sn\end{code}
+(Strong Name) utility can be used to generate a key pair and place the pair
+in an (insecure) file:
+\begin{quote}\begin{code}
+sn -k \emph{myKeyPairFile.snk}
+\end{code}\end{quote}
+Then the public key can be extracted from the file:
+\begin{quote}\begin{code}
+sn -p \emph{myKeyPairFile.snk} \emph{myPublicKey.snk}
+\end{code}\end{quote}
+Once a key pair has been obtained the following attribute is placed in the
+\begin{code}AssemblyInfo.cs\end{code} class for the project indicating that the assembly
+should be signed:
+\begin{quote}\begin{code}
+[assembly: AssemblyKeyFile(@"\emph{myKeyPairFile.snk}")]
+\end{code}\end{quote}
+Alternatively, a .NET file such as single compiled C\# class can be signed or verified using the
+\begin{code}signtool\end{code} utility.
+
+Developers of code often want to protect their code against \defn{reverse engineering}.
+Both Java and .NET come with command line \defn{disassembler} utilities,
+\begin{code}javap\end{code} and \begin{code}ildasm\end{code} respectively,
+which present a human-readable version of any compiled bytecode.
+However, a \defn{decompiler} can instead be used on compiled code to reveal
+much more of the structure of the original source code,
+producing a functionally equivalent source file.
+Most decompilers can obtain quite a bit of the structure of the source,
+including the original variable and method names
+(which are retained by a compiler in compiled classes),
+and a lot of information about how the methods were programmed,
+apart from comments which are always removed by a compiler.
+This can potentially put the intellectual property of a programmer at risk,
+as recipients of compiled code can themselves determine details of
+how the programmer wrote the software.
+To counter attempts at reverse engineering code, a developer can use a
+\defn{code obfuscator}. An obfustactor transforms a compiled class by scrambling and
+renaming variable, method and class names, replacing pieces of code with equivalent but
+more obscure code, in-lining code fragments, and possibly optimizing control structures.
+
+For example, using a common decompiler (called JAD) on the compiled class
+\begin{code}XMLSignerVerifier\end{code} from Section \ref{Se:XMLWebServiceSecurity}
+results in a reasonably close copy of the original source file
+(see the file \begin{code}XMLSignerVerifierRE\end{code}).
+Passing the compiled class through an obfuscator (called ProGuard) results
+in a functionally equivalent class file. Decompiling this
+obfuscated version exposes less information about the source
+(see the file \begin{code}XMLSignerVerifierOB\end{code}), in particular
+the field and inner class names have been lost.
+However, it is clear from this example that obfuscation does not totally thwart
+attempts at reverse engineering,
+although it can make decompiled code (particularly for a large project)
+more difficult to understand. To fully protect
+code from attempts at reverse engineering it can be encrypted,
+which would protect its source from all but the intended recipient.
+
+Whenever bytecode for a Java class is loaded into a virtual machine for
+execution, or a C\# assembly is loaded into the .NET common language runtime,
+the (Java or .NET) virtual machine first performs \defn{bytecode verification}.
+The verification involves checking the code to ensure issues
+such as that all variables have been initialized before they will be used,
+method signatures (parameter and return types) are correctly used,
+scope rules (private and protected modifiers) are correctly followed,
+and memory for the program is correctly accessed.
+Since a Java or C\# compiler has itself already checked the source code for such problems
+it might seem strange that all compiled code is checked again just before the code gets executed.
+The reason for this is that a skilled attacker could maliciously modify the code output
+from a compiler (or use a malicious compiler)
+and try to arrange for some operation that is unsafe for the Java virtual machine or .NET platform,
+such as accessing a memory location outside the bounds of the program or causing
+a runtime stack overflow.
+Hence, verification prevents a tampered class file from damaging the runtime environment.
+Note that for Java Standard Edition and .NET all bytecode is automatically verified,
+whereas for Java Micro Edition it performed as a separate step before being installed on
+a device so to reduce the burden on the device's virtual machine.
+
+Once compiled code has been checked by a virtual machine and allowed to execute
+its authorization to perform specific operations while running is controlled by a
+\defn{security manager}, which uses a \defn{security policy} specifying
+the types of operations for which the code is granted permission.
+A security manager is represented in Java by the \begin{code}SecurityManager\end{code}
+class from the \begin{code}java.lang\end{code} package, or its
+subclass \begin{code}RMISecurityManager\end{code} which is required
+if dynamic loading of class files is used for remote objects.
+By default a Java application has no security manager installed, so that all
+Java operations are permitted.
+One can be installed and a security policy file specified either
+with the following lines of code in the application:
+\begin{quote}\begin{code}
+System.setProperty("java.security.policy","\emph{MyApp.policy}"); \\
+System.setSecurityManager(new SecurityManager());
+\end{code}\end{quote}
+or else when the application is executed:
+\begin{quote}\begin{code}
+java -Djava.security.manager \\
+\trind -Djava.security.policy=\emph{MyApp.policy} \emph{MyApplication}
+\end{code}\end{quote}
+Besides a specified policy file there are standard locations where
+a security manager checks for further policy files,
+the \begin{code}java.policy\end{code} file in the \begin{code}lib/security\end{code}
+folder of the Java runtime, or else in a file called \begin{code}.java.policy\end{code}
+in the user's home directory (standard locations can be specified in the
+\begin{code}java.security\end{code} properties file).
+A security manager adds (the union of) all the permissions granted in any of these policy files,
+unless \begin{code}==\end{code} is used in the command line in place of
+\begin{code}=\end{code}, which instructs the security manager to only use the
+specified policy file.
+A system administrator can modify the \begin{code}java.security\end{code} properties file
+to specify security policy files that cannot be edited by the user and that additional
+policy files are not allowed to be specified by the user.
+For comparison, .NET instead uses four policy files, \defn{enterprise}
+(used by a system administrator), \defn{machine} (used by a machine administrator),
+\defn{user} (which can be modified by the user), and \defn{application domain}
+(for a particular application), and takes the intersection of all the permissions
+granted. Hence, an operation is only permitted in .NET if permission for it is granted
+in all the policy files. These policy files are modified through the .NET administrative tools.
+
+Java and .NET each include permissions for accessing file systems, network communication,
+the display, reflection (the ability to determine and create instances of a class given an
+instance), accessing the system clipboard, controlling threads,
+particular types of database access, and using a printer.
+In Java the location of a key store (holding certificates)
+can be given at the start of a security policy file before the first \begin{code}grant\end{code}:
+\begin{quote}\begin{code}
+keystore "file:\emph{mytruststore.jks}", "JKS" \\
+grant signedBy \emph{alias} codeBase \emph{uri} Principal \emph{PrinClass} \emph{name} \\
+\{\dbind permission \emph{SecurityPermissionClass} \emph{Action}; \\
+\trind \vdots \\
+\trind permission \emph{SecurityPermissionClass} \emph{Action}; \\
+\}; \\
+\vdots
+\end{code}\end{quote}
+A \begin{code}java.io.FilePermission\end{code} specifies a file target:
+\begin{quote}
+  \begin{code}\emph{file}\end{code} for the specified file, \\
+  \begin{code}*\end{code} for all files in the current directory, \\
+  \begin{code}-\end{code} for all files in the current directory or in any subdirectory of it, \\
+  \begin{code}\emph{directory}/\end{code} for the specified directory, \\
+  \begin{code}\emph{directory}/*\end{code} for all files in specified directory, \\
+  \begin{code}\emph{directory}/-\end{code} for all files in specified directory,
+  or in a subdirectory\\
+  \begin{code}<<ALL FILES>>\end{code} for all files in the file system,
+\end{quote}
+followed by a comma and any combination of \begin{code}read\end{code},
+\begin{code}write\end{code}, \begin{code}execute\end{code}, \begin{code}delete\end{code}.
+A \begin{code}java.net.\\SocketPermission\end{code} specifies a host:
+\begin{quote}
+  \begin{code}\emph{hostname}\end{code} for the specified host or IP address, \\
+  \begin{code}localhost\end{code} or \begin{code}""\end{code} for the local host, \\
+  \begin{code}*.\emph{domainSuffix}\end{code} for any host that ends with the given suffix, \\
+  \begin{code}*\end{code} for all hosts,
+\end{quote}
+followed by a port range:
+\begin{quote}
+  \begin{code}:\emph{n}\end{code} for just the specified single port, \\
+  \begin{code}:\emph{n}-\end{code} for all ports numbered \begin{code}\emph{n}\end{code}
+  and above, \\
+  \begin{code}:-\emph{n}\end{code} for all ports numbered \begin{code}\emph{n}\end{code}
+  and below, \\
+  \begin{code}:\emph{n1}-\emph{n2}\end{code} for the specified range of ports,
+\end{quote}
+followed by a comma and any combination of \begin{code}read\end{code},
+\begin{code}write\end{code}.
+Custom security permission classes can be made by extending the
+\begin{code}Permission\end{code} class or one of its subclasses from the
+\begin{code}java.security\end{code} package, providing implementations
+for the methods \begin{code}getActions\end{code}, \begin{code}equals\end{code},
+\begin{code}hashCode\end{code}, \begin{code}implies\end{code}.
+
+Applets that are loaded over a network by a browser use a security manager provided
+by the browser and are usually assigned a very restricted security policy.
+By default the security policy prevents applets from performing operations
+which might put the client at risk, such as reading and writing files
+on the client file system, and from making network connections to any host other than
+the host from where the applet was obtained.
+In addition, applets loaded over a network are prevented from starting other programs
+on the client, they are not allowed to load libraries,
+or to define native method calls (to prevent applets from obtaining direct
+access to the computer).
+Applets that need some of these permissions granted are typically signed and a
+security policy file is provided to the browser.
+
+
+\begin{exercise}[Granting Permission to Signed Code]
+Prepare a GUI that contains a text field for entering the name of a file
+and a text area for displaying the contents of the file
+(ensuring the file reader catches a possible \begin{code}Security\-Exception\end{code}).
+Then sign the GUI and create a suitable security permission file so that the GUI
+can only read from the file system if it is signed using a key for which there
+is a trusted certificate.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Firewalls                                                                     %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Firewalls}\label{Se:Firewalls}
+
+\reading{pp622-634}
+
+A \defn{firewall} is hardware and/or software technology that is placed on the
+perimeter of a network and which acts as a security barrier around the network,
+examining and filtering all communication passing in and out of the network.
+Firewalls are used to restrict the Internet services available to users and help protect
+machines within the network from external attacks.
+Filtering rules can restrict communication to and from certain IP addresses
+or restrict traffic to only certain protocols as determined by the firewall administrator.
+A firewall can be classified as follows:
+\begin{description}
+  \item[Packet filtering firewall] which filters packets at the network protocol level,
+  checking each IP packet against a list of security criteria, such as source and destination
+  IP addresses, port numbers, and the communication protocol.
+  Packets that do not meet the criteria are either discarded or else result in a message
+  back to the sender.
+  Packet filtering is usually performed by a router, providing some basic but limited
+  security without adversely affecting the performance of the network.
+
+  \item[Circuit level gateway] which filters packets at the transport or session protocol layer,
+  monitoring TCP handshaking to determine whether a requested TCP session is legitimate,
+  such as ensuring that was initiated by a known IP address within the network,
+  not externally.
+  Rather than permitting a direct end-to-end TCP connection between a machine inside
+  the network with one outside, a circuit level gateway instead sets up its own connection
+  with either end and relays TCP segments between the two connections,
+  performing \defn{network address translation} (NAT) between the private IP addresses
+  within the network and temporarily assigned IP addresses.
+  Any machine outside the network thus communicates with the gateway, so
+  actual IP addresses of machines within the network are hidden.
+
+  \item[Application level gateway (proxy)] which filters packets at the application
+  protocol layer, only allowing application protocols for which there is a corresponding
+  proxy in the firewall, such as the freely available Squid web proxy which only
+  allows HTTP traffic and can inspect \begin{code}GET\end{code} and
+  \begin{code}POST\end{code} requests.
+  Application level proxies offer a high level of security as they can inspect
+  the data being transmitted but have a significant
+  impact on network performance.
+
+  \item[Stateful multilayer inspection firewall] which combines aspects
+  of the other three types of firewall, filtering packets at network layer,
+  session layer, and using algorithms to process application layer data
+  rather then using application-specific proxies.
+  A stateful firewall holds attributes of each connection in a table so that
+  packets for connections that have already been screened can be quickly processed
+  (interestingly, the most common DDOS attack is currently a SYN flood which
+  attempts to overflow this firewall table).
+  It offers good security and performance but is more complex to administer.
+\end{description}
+
+In the \defn{screened host with single-homed bastion} firewall configuration
+a packet filtering router is used to block all packets
+except those that are to or from a secure \defn{bastion host} which performs
+circuit level or application level filtering.
+Optionally the router might also allow communication with some public
+information servers (such as web servers).
+
+\noindent\begin{center}
+\begin{pspicture}(0,0.4)(12,3.4)
+  \rput(11.5,2){\rnode{I}{Internet}}
+  \rput(9.5,2){\dianode{Ro}{{\makebox[6.5mm]%
+    {\scriptsize\begin{tabular}{c}Filtering\\router\end{tabular}}}}}
+  \rput(6.5,3){\rnode{BH}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Bastion\\host\end{tabular}}}}}
+  \rput(5,1){\rnode{IS}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Information\\Server\end{tabular}}}}}
+  \rput(6.5,2){\pnode{N1}}
+  \rput(5,2){\pnode{N2}}
+  \rput(3.5,2){\pnode{N3}}\rput(3.5,2.5){\pnode{N3End}}
+  \rput(2,2){\pnode{N4}}\rput(2,1.5){\pnode{N4End}}
+  \rput(0.5,2){\pnode{NEnd}}
+  \rput(2,2.3){Internal network}
+
+  \ncline{Ro}{I}
+  \ncline[linecolor=red,linewidth=1mm]{Ro}{NEnd}
+  \ncline[linecolor=red,linewidth=1mm]{N1}{BH}
+  \ncline[linecolor=red,linewidth=1mm]{N2}{IS}
+  \ncline[linecolor=red,linewidth=1mm]{N3}{N3End}
+  \ncline[linecolor=red,linewidth=1mm]{N4}{N4End}
+\end{pspicture}\end{center}
+
+\noindent
+However, if the router were to be compromised by an attacker, then the machines on
+the internal network would become vulnerable as packets could then be sent directly to them.
+To counter this risk, the \defn{screened host with dual-homed bastion}
+firewall configuration places the bastion host between the internal network
+and the router, providing dual layer security, requiring all communication
+to physically pass through both the router and the bastion host.
+
+\noindent\begin{center}
+\begin{pspicture}(0,0.4)(12,2.8)
+  \rput(11.5,2){\rnode{I}{Internet}}
+  \rput(9.5,2){\dianode{Ro}{{\makebox[6.5mm]%
+    {\scriptsize\begin{tabular}{c}Filtering\\router\end{tabular}}}}}
+  \rput(7,2){\rnode{BH}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Bastion\\host\end{tabular}}}}}
+  \rput(5,1){\rnode{IS}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Information\\Server\end{tabular}}}}}
+  \rput(5,2){\pnode{N2}}
+  \rput(3.5,2){\pnode{N3}}\rput(3.5,2.5){\pnode{N3End}}
+  \rput(2,2){\pnode{N4}}\rput(2,1.5){\pnode{N4End}}
+  \rput(0.5,2){\pnode{NEnd}}
+  \rput(2,2.3){Internal network}
+
+  \ncline{Ro}{I}
+  \ncline[linecolor=red,linewidth=1mm]{Ro}{BH}
+  \ncline[linecolor=red,linewidth=1mm]{BH}{NEnd}
+  \ncline[linecolor=red,linewidth=1mm]{N2}{IS}
+  \ncline[linecolor=red,linewidth=1mm]{N3}{N3End}
+  \ncline[linecolor=red,linewidth=1mm]{N4}{N4End}
+\end{pspicture}\end{center}
+
+\noindent
+The \defn{screened subnet} firewall configuration provides a third security layer
+by placing another packet filtering router between the public (screen subnet) part
+of the network (consisting of the bastion host, public information servers, modems)
+and the internal network.
+
+\noindent\begin{center}
+
+\begin{pspicture}(0,0.4)(12,2.8)
+  \rput(11.5,2){\rnode{I}{Internet}}
+  \rput(9.9,2){\dianode{Ro}{{\makebox[6.5mm]%
+    {\scriptsize\begin{tabular}{c}Outside\\router\end{tabular}}}}}
+  \rput(8,2){\rnode{BH}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Bastion\\host\end{tabular}}}}}
+  \rput(6.25,1){\rnode{IS}{\psframebox{\makebox[14mm]%
+    {\rule[-2mm]{0mm}{6mm}\scriptsize\begin{tabular}{c}Information\\Server\end{tabular}}}}}
+  \rput(6.25,2){\pnode{N2}}
+  \rput(4.75,2){\dianode{Ro2}{{\makebox[6.5mm]%
+    {\scriptsize\begin{tabular}{c}Inside\\router\end{tabular}}}}}
+  \rput(3.5,2){\pnode{N3}}\rput(3.5,2.5){\pnode{N3End}}
+  \rput(2,2){\pnode{N4}}\rput(2,1.5){\pnode{N4End}}
+  \rput(0.5,2){\pnode{NEnd}}
+  \rput(7.325,2.8){Screened subnet}
+  \rput(2,2.3){Internal network}
+
+  \ncline{Ro}{I}
+  \ncline[linecolor=red,linewidth=1mm]{Ro}{BH}
+  \ncline[linecolor=red,linewidth=1mm]{BH}{Ro2}
+  \ncline[linecolor=red,linewidth=1mm]{N2}{IS}
+  \ncline[linecolor=red,linewidth=1mm]{Ro2}{NEnd}
+  \ncline[linecolor=red,linewidth=1mm]{N3}{N3End}
+  \ncline[linecolor=red,linewidth=1mm]{N4}{N4End}
+\end{pspicture}
+\end{center}
+
+\noindent The outside router only allows external access to the screened subnet,
+and does not allow direct access to the internal network. Similarly, the
+inside router only allows the internal network access to the screened subnet.
+
+The \defn{Sockets protocol} (SOCKS) is an intermediate protocol between the
+transport and the application protocol layers that enables a client
+located behind a firewall to transparently communicate with an external server.
+When a TCP or UDP client wants to communicate with a server located outside
+of the network firewall a TCP connection is made to a SOCKS proxy server
+(running by default on port 1080), the client authenticates itself with the server,
+and if authenticated it sends the SOCKS server a \defn{relay request}
+for performing TCP or UDP communication with a stated external server.
+A SOCKS proxy can be specified in Java through the system properties
+\begin{code}socksProxyHost\end{code} and \begin{code}socksProxyPort\end{code}.
+
+If a firewall does not allow application data to be communicated directly
+using a protocol such as TCP then an HTTP tunnel can be set up.
+An \defn{HTTP tunnel} wraps application data inside HTTP packets which are usually
+allowed to pass through most firewalls.
+The HTTP packets are then processed by a \defn{mediator server} outside the firewall
+which converts the data back to the original application data and forwards
+it to the intended server. The mediator also wraps the response from the server
+and sends it back as an HTTP response to the application.
+
+As an application of tunneling through a firewall, note that
+the class \begin{code}SSL\-EchoClient\end{code} from Section \ref{Se:WebSecurity}
+cannot itself connect to an external SSL host from behind a firewall.
+However, the example class \begin{code}SSLTunnelSocketFactory\end{code} can
+be used as its \begin{code}SSLSocketFactory\end{code} to create an
+\begin{code}SSLSocket\end{code} for accessing an SSL host via a proxy tunnel
+through the firewall.
+First, a TCP connection is made to the proxy server using a normal \begin{code}Socket\end{code}
+and a \begin{code}CONNECT\end{code} is sent to the proxy,
+followed by the name of the SSL host, a colon, and the port of the SSL host.
+A \begin{code}CONNECT\end{code} method is an HTTP method that requests the proxy
+to just forward the communication to the specified host and pass the response back.
+If the proxy agrees to the request (possibly requiring authentication of the client
+via a Base 64 encoded user name and password) then an \begin{code}SSLSocket\end{code} is
+layered on top of the \begin{code}Socket\end{code}.
+Hence the proxy will be unable to inspect the communication it is forwarding
+between the client and the SSL host.
+
+\begin{figure*}[t]\begin{center}
+		\begin{pspicture}(-6,-5.5)(6,5.5)
+		\pscircle[fillcolor=magenta!20,fillstyle=solid](0,0){5.5}
+		\pscircle[fillcolor=white,fillstyle=solid](0,0){5}
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-5,-0.25)(5,-0.25)(5,0.25)(-5,0.25)(-5,-0.25)
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-0.25,-5)(-0.25,5)(0.25,5)(0.25,-5)(-0.25,-5)
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-4.205,-2.716)(4.455,2.284)(4.205,2.716)(-4.455,-2.284)(-4.205,-2.716)
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-4.205,2.716)(4.455,-2.284)(4.205,-2.716)(-4.455,2.284)(-4.205,2.716)
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-2.284,-4.455)(2.716,4.205)(2.284,4.455)(-2.716,-4.205)(-2.284,-4.455)
+		\psline[fillcolor=yellow!60,fillstyle=solid]%
+		(-2.284,4.455)(2.716,-4.205)(2.284,-4.455)(-2.716,4.205)(-2.284,4.455)
+		\pscircle[fillcolor=green!30,fillstyle=solid](0,0){2.25}
+		\pscircle[fillcolor=cyan,fillstyle=solid](0,0){1.75}
+		\pscircle[fillcolor=red!50,fillstyle=solid](0,0){1.25}
+		\pscircle[fillcolor=white,fillstyle=solid](0,0){0.75}
+		\psset{linestyle=none}
+		\rput(0,0.15){\rnode{S}{Applic}}
+		\rput(0,-0.15){\rnode{S}{Service}}
+		\pstextpath[c]{\psarcn(0,0){1}{270}{-90}}{Hardened Operating System}
+		\pstextpath[c]{\psarcn(0,0){1.5}{180}{0}}{Configuration}
+		\pstextpath[c]{\psarcn(0,0){2}{180}{0}}{Identity Management}
+		\pstextpath[c]{\psarcn(0,0){5.25}{180}{0}}{Perimeter Security}
+		\pstextpath[c]{\psline(2.25,0)(5,0)}{Auditing}
+		\pstextpath[c]{\psline(1.949,1.125)(4.33,2.5)}{Authentication}
+		\pstextpath[c]{\psline(1.125,1.949)(2.5,4.33)}{Authorization}
+		\pstextpath[c]{\psline(0,2.25)(0,5)}{Availability}
+		\pstextpath[c]{\psline(-2.5,4.33)(-1.125,1.949)}{Compliance}
+		\pstextpath[c]{\psline(-4.33,2.5)(-1.949,1.125)}{Confidentiality}
+		\pstextpath[c]{\psline(-5,0)(-2.25,0)}{Integrity}
+		\pstextpath[c]{\psline(-4.33,-2.5)(-1.949,-1.125)}{Labelling}
+		\pstextpath[c]{\psline(-2.5,-4.33)(-1.125,-1.949)}{Logging}
+		\pstextpath[c]{\psline(0,-2.25)(0,-5)}{Management}
+		\pstextpath[c]{\psline(1.125,-1.949)(2.5,-4.33)}{Policy}
+		\pstextpath[c]{\psline(1.949,-1.125)(4.33,-2.5)}{PKI}
+		\end{pspicture}\end{center}
+\end{figure*}
+
+A \defn{security wheel}
+(taken from the book \emph{Core Security Patterns} by Steel, Nagappan, Lai)
+illustrates all the security components for a secure system.
+At the hub of the wheel is the business logic of the application or service that
+must have security incorporated into its design.
+Surrounding this is a hardened operating system (an
+operating system that has its own security with unnecessary features removed),
+which is securely configured to provide reliable provisioning mechanisms,
+and which is protected by an identity management system.
+The spokes of the security wheel represent the 12 core security services
+that are incorporated:
+\begin{description}
+	\item[auditing] which provides regular records about the application or
+	service activity, to support forensic investigations and regulatory compliance,
+	\item[authentication] which verifies the identity of a subject,
+	\item[authorization] which determines whether a subject is permitted to
+	access the various features provided by the application or service,
+	\item[availability] which ensures reliable and timely access to the application or service,
+	\item[compliance] which ensures that standards or regulatory requirements
+	are met,
+	\item[confidentiality] which ensures information is safe from unauthorized access
+	during transmission and storage,
+	\item[integrity] which ensures information is not tampered with
+	by unauthorized subjects,
+	\item[labelling] which appropriately classifies information according to
+	its security level to prevent unauthorized disclosure,
+	\item[logging] which provides records of events for the diagnosis of problems,
+	\item[management] which provides mechanisms for the central administration
+	of security operations,
+	\item[policy] which provides rules and procedures for access control,
+	\item[public key infrastructure] which provides key management and distribution facilities.
+\end{description}
+All the spokes must be in place to ensure a robust security architecture.
+Beyond the spokes is the perimeter security, consisting of a firewall along with
+intrusion prevention and detection systems.
+Note that it is essential when creating a secure system that all these security
+components are considered throughout the development process rather than attempts
+made to add security after the application or service has been developed.
+
+
+
+
+\begin{exercise}[Proxy Tunneling Through a Firewall]
+	Implement a simple firewall that allows proxy tunneling to an external SSL host
+	and test it using a modified \begin{code}SSLEchoClient\end{code}.
+\end{exercise}
+
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A factory class that can be used to create SSL sockets which use
+   tunneling of SSL through a proxy. Adapted from JSSE samples
+   @author Andrew Ensor
+*/
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import sun.misc.BASE64Encoder; //undocumented Sun&IBM VM utility class
+
+public class SSLTunnelSocketFactory extends SSLSocketFactory
+{
+   private String tunnelHost;
+   private int tunnelPort;
+   private String tunnelUserName;
+   private String tunnelPassword;//should not store password as String
+   private SSLSocketFactory defaultFactory;
+   private boolean socketConnected;
+
+   public SSLTunnelSocketFactory(String tunnelHost, int tunnelPort,
+      String tunnelUserName, String tunnelPassword)
+   {  this.tunnelHost = tunnelHost;
+      this.tunnelPort = tunnelPort;
+      this.tunnelUserName = tunnelUserName;
+      this.tunnelPassword = tunnelPassword;
+      defaultFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+      socketConnected = false;
+   }
+
+   public SSLTunnelSocketFactory(String tunnelHost, int tunnelPort)
+   {  this(tunnelHost, tunnelPort, null, null);
+   }
+
+   public String[] getSupportedCipherSuites()
+   {  return defaultFactory.getSupportedCipherSuites();
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   public String[] getDefaultCipherSuites()
+   {  return defaultFactory.getDefaultCipherSuites();
+   }
+
+   public synchronized boolean isSocketConnected()
+   {  return socketConnected;
+   }
+
+   public synchronized void setSocketConnected(boolean socketConnected)
+   {  this.socketConnected = socketConnected;
+   }
+
+   public Socket createSocket(Socket s, String host, int port,
+      boolean autoClose) throws IOException, UnknownHostException
+   {  // create a regular socket to tunnel through the proxy host
+      Socket tunnel = new Socket(tunnelHost, tunnelPort);
+      doTunnelHandshake(tunnel, host, port);
+      // layer an SSL socket over the top of the regular socket
+      SSLSocket sslSocket = (SSLSocket)
+         defaultFactory.createSocket(tunnel, host, port, autoClose);
+      sslSocket.addHandshakeCompletedListener(
+         new HandshakeCompletedListener()
+         {  public void handshakeCompleted(HandshakeCompletedEvent e)
+            {  System.out.println("Handshake completed with peer host "
+                  + e.getSession().getPeerHost()
+                  + " and assigned session ID " + e.getSession());
+               setSocketConnected(true);
+            }
+         });
+      return  sslSocket;
+   }
+
+   private void doTunnelHandshake(Socket tunnel, String host, int port)
+      throws IOException
+   {  OutputStream os = tunnel.getOutputStream();
+      String connectionString = "CONNECT " + host + ":" + port
+         + " HTTP/1.0\n" + "User-Agent: "
+         + sun.net.www.protocol.http.HttpURLConnection.userAgent
+         + "\r\n";
+      if (tunnelUserName!=null  && tunnelPassword!=null)
+      {  // add the Base 64 encoded user name and password
+         BASE64Encoder encoder = new BASE64Encoder();
+         String encodedString = encoder.encode((tunnelUserName + ":"
+            + tunnelPassword).getBytes());
+         connectionString += "Proxy-Authorization: Basic "
+            + encodedString + "\r\n";
+      }
+      connectionString += "Content-Length: 0\r\n"
+         + "Pragma: no-cache\r\n\r\n";
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+      // send the connection HTTP request using ASCII7 encoding
+      byte[] connectionBytes;
+      try
+      {  connectionBytes = connectionString.getBytes("ASCII7");
+      }
+      catch (UnsupportedEncodingException e)
+      {  connectionBytes = connectionString.getBytes();
+      }
+      os.write(connectionBytes);
+      os.flush();
+      // obtain the connection reply
+      InputStream is = tunnel.getInputStream();
+      List<Byte> responseList=new ArrayList<Byte>(); //response header
+      int newLinesSeen = 0;
+      boolean headerDone = false;
+      while (newLinesSeen < 2)
+      {  int data = is.read();
+         if (data < 0)
+            throw new IOException("Unexpected end of response");
+         if (data == '\n')
+         {  headerDone = true;
+            newLinesSeen++;
+         }
+         else if (data != '\r')
+         {  newLinesSeen = 0;
+            if (!headerDone)
+               responseList.add((byte)data);
+         }
+      }
+      // convert the HTTP response into a string using ASCII7 encoding
+      int responseLength = responseList.size();
+      byte[] responseBytes = new byte[responseLength];
+      for (int i=0; i<responseLength; i++)
+         responseBytes[i] = responseList.get(i);
+      String responseString;
+      try
+      {  responseString = new String(responseBytes, 0, responseLength,
+            "ASCII7");
+      }
+      catch (UnsupportedEncodingException e)
+      {  responseString = new String(responseBytes, 0, responseLength);
+      }
+      // check that response was successful
+      if (responseString.toLowerCase().indexOf
+         ("200 connection established")<0)
+         throw new IOException("Unable to tunnel through "+tunnelHost
+            + ":" + tunnelPort + ". Proxy returned " + responseString);
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   // overridden method of SocketFactory
+   public Socket createSocket(InetAddress host, int port)
+      throws IOException, UnknownHostException
+   {  return createSocket(null, host.getHostName(), port, true);
+   }
+
+   // overridden method of SocketFactory
+   public Socket createSocket(InetAddress address, int port,
+      InetAddress localAddress, int localPort)
+      throws IOException, UnknownHostException
+   {  return createSocket(null, address.getHostName(), port, true);
+   }
+
+   // overridden method of SocketFactory
+   public Socket createSocket(String host, int port)
+      throws IOException, UnknownHostException
+   {  return createSocket(null, host, port, true);
+   }
+
+   // overridden method of SocketFactory
+   public Socket createSocket(String host, int port,
+      InetAddress localHost, int localPort)
+      throws IOException, UnknownHostException
+   {  return createSocket(null, host, port, true);
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+

@@ -1,0 +1,1575 @@
+% This is the LaTeX file for the chapter:
+%   Network Security
+% for the manual:
+%   Highly Secure Systems
+% Written by Andrew Ensor
+% Last updated December 12, 2018.
+
+\chapter{Network Security}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Authentication Services                                                       %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Authentication Services}\label{Se:AuthenticationServices}
+
+\reading{pp401-419}
+
+User authentication is vital to the security of a distributed system,
+access to some servers in the system might need to be controlled,
+operations such as printing might need to be billed to the correct user,
+and execution of some types of operations might need to be restricted to authorized users.
+
+One of the earliest and most-widely used authentication services is called
+\defn{Kerberos}. Kerberos allows users in an insecure network to
+authenticate their identity using a standardized protocol and a trusted
+key distribution centre, taking responsibility for the authentication of
+users and controlling their access to services within its \defn{realm}
+(part of the system for which it has authentication responsibility).
+A Kerberos key distribution centre is logically divided into two parts,
+although in a small system both might reside on the same server machine:
+\begin{description}
+  \item[authentication server] which has a secret (master) key for secure communication
+  with each user in its realm and which is responsible for checking user
+  credentials to provide authentication, typically listening on port 88,
+  \item[ticket granting server] which the user consults once its identity
+  has been authenticated to obtain authorization to use a service
+  provided by a server in the realm, typically listening on port 749.
+\end{description}
+The protocol used by Kerberos follows an enhanced version of the steps
+from Section \ref{Se:SecretKeyDistribution}.
+The user obtains a \defn{ticket granting ticket} (TGT) from the authentication
+server once its identity has been authenticated, which it can present
+to the ticket granting server to receive a \defn{service granting ticket} (SGT)
+for a particular service in the realm, authorizing the user to access that
+service during a specified time period.
+
+When a user logs on to the system via a client machine the client obtains
+the secret master key from the user for decrypting responses from the
+authentication server
+(such as by using password based encryption with a user-supplied password).
+The client sends a plaintext message to the authentication server
+requesting a ticket granting ticket to be produced for the user which vouches
+for the user's identity, including:
+\begin{itemize}
+  \item options for requesting the TGT to have particular properties,
+  such as being renewable or be postdated,
+  \item an identifier for the user,
+  \item the name of the realm,
+  \item an identifier for the ticket granting server that will be used,
+  \item a requested validity time period for the TGT,
+  \item a nonce value.
+\end{itemize}
+The authentication server checks whether the user is known to it and
+if so responds to the client with a TGT suitably encrypted for the ticket granting server,
+and with a session key for the client communication with the ticket generating
+server during the lifetime of the TGT, including:
+\begin{itemize}
+  \item the name of the realm,
+  \item an identifier for the user,
+  \item the TGT which holds the session key, the name of the realm,
+  an identifier for the user, the network address of the client,
+  and validity period of the TGT, all encrypted by the authentication server
+  for the ticket granting server using a secret key,
+  \item the session key, the validity period of the TGT, the same nonce value,
+  the name of the realm, and an identifier for the ticket granting server,
+  all encrypted by the authentication server for the user using the master key.
+\end{itemize}
+
+\noindent
+\begin{center}\begin{pspicture}(0,0)(12,3.8)
+  \rput(6,3.8){\emph{Start of user session}}
+  \psline[fillcolor=yellow,fillstyle=solid](3,1.75)(3,3.25)(9,3.25)(9,1.75)(3,1.75)
+  \rput(8.45,3.45){\scriptsize Kerberos}
+  \rput(2,0.75){\ovalnode{C}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Client machine\\with user\end{tabular}}}}
+  \rput(4.5,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{A}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Authentication\\Server\end{tabular}}}}
+  \rput(7.5,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{T}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Ticket Granting\\Server\end{tabular}}}}
+  \rput(10,0.75){\ovalnode{S}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Server with\\available service\end{tabular}}}}
+  \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=75,angleB=195]{C}{A}
+  \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=255,angleB=15]{A}{C}
+  \rput(1.5,1.75){\tiny\begin{tabular}{c}authentication\\request\end{tabular}}
+  \rput(4.45,1.05){\tiny\begin{tabular}{c}TGT reply\\and session key\end{tabular}}
+\end{pspicture}\end{center}
+
+The ticket granting ticket can then be used by the client as proof of the user's
+authenticity during the remainder of the session or until the TGT expires.
+This avoids the need for the user to repeatedly enter its log on password during
+a single session, providing a feature known as \defn{single sign-on}.
+Whenever the user tries to use a new service during that session the client
+presents the TGT to the ticket granting server, requesting a SGT to authorize
+its access to that service, including with the request:
+\begin{itemize}
+  \item options for requesting the SGT to have particular properties,
+  \item an identifier for the service,
+  \item requested validity time period for the SGT,
+  \item a nonce value,
+  \item the TGT from the authentication server,
+  \item an \defn{authenticator} for the request, consisting of an identifier
+  for the user, the name of the realm, and a timestamp, all encrypted by the
+  client using the session key.
+\end{itemize}
+The ticket granting server decrypts the TGT to check its validity,
+determines the session key, and so can decrypt the authenticator to verify the authenticity
+of the sender. If the ticket granting server determines that the user should
+be authorized to use the service, then it responds to the client, including:
+\begin{itemize}
+  \item the name of the realm,
+  \item an identifier for the user,
+  \item the SGT which holds a new session key for the client communication with the
+  service, the name of the realm, an identifier for the user, the network
+  address of the client, and validity period of the SGT, all encrypted
+  by the ticket granting server for the service using a secret key,
+  \item the session key for the client communication with the service,
+  the validity period of the SGT, the same nonce value, the name of the realm,
+  and an identifier for the service, all encrypted by the ticket granting server
+  using its session key with the client.
+\end{itemize}
+
+\noindent
+\begin{center}\begin{pspicture}(0,0)(12,3.8)
+  \rput(6,3.8){\emph{First usage of a particular service during session}}
+  \psline[fillcolor=yellow,fillstyle=solid](3,1.75)(3,3.25)(9,3.25)(9,1.75)(3,1.75)
+  \rput(8.45,3.45){\scriptsize Kerberos}
+  \rput(2,0.75){\ovalnode{C}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Client machine\\with user\end{tabular}}}}
+  \rput(4.5,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{A}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Authentication\\Server\end{tabular}}}}
+  \rput(7.5,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{T}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Ticket Granting\\Server\end{tabular}}}}
+  \rput(10,0.75){\ovalnode{S}{\makebox[15mm]%
+    {\scriptsize\begin{tabular}{c}Server with\\available service\end{tabular}}}}
+  \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=30,angleB=210]{C}{T}
+  \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=255,angleB=0]{T}{C}
+  \rput(2.5,1.5){\tiny\begin{tabular}{c}authorization\\request\end{tabular}}
+  \rput(6.75,0.6){\tiny\begin{tabular}{c}SGT reply and\\service session key\end{tabular}}
+\end{pspicture}\end{center}
+
+Once the client has received a service granting ticket for a particular service
+it can present it to the service with each request along with an authenticator
+for the request (which can optionally include an alternative session key chosen by the
+client, and a starting sequence number to detect replay attacks during the exchange).
+When the SGT expires, the client can request another SGT from the
+ticket granting server so long as it still has a valid TGT.
+This process is repeated for each new service the user requests.
+
+The \defn{Java Authentication and Authorization Service} (JAAS) is an API
+included with Java Standard Edition to support the authentication of users and their
+authorization to execute security-sensitive operations.
+It is a flexible framework found in the package \begin{code}javax.security.auth\end{code}
+and subpackages of it, allowing a client to authenticate a user independently of
+the type of JAAS-compatible authentication service actually used in the system
+(such as Kerberos, a smart card system, or a biometric authentication system).
+A user or process that requires authentication is represented by the
+\begin{code}Subject\end{code} class, and each identity that a
+\begin{code}Subject\end{code} has,
+such as a user name within a realm or a unique identity number,
+is represented by the \begin{code}Principal\end{code} interface
+(which is implemented by classes such as \begin{code}KerberosPrincipal\end{code}).
+The class \begin{code}SimplePrincipal\end{code} demonstrates a simple
+\begin{code}Principal\end{code} that represents a user name given by a string.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that represents a simple JAAS Principal which provides a
+   String name as an identity for a Subject
+   @see SimpleLoginModule.java
+*/
+package simplejaasmodule;
+
+import java.security.Principal;
+
+public class SimplePrincipal implements Principal
+{
+   private String name;
+
+   public SimplePrincipal(String name)
+   {  if (name == null)
+         throw new IllegalArgumentException("No name for subject");
+      this.name = name;
+   }
+
+   public boolean equals(Object another)
+   {  if (another==null || !(another instanceof SimplePrincipal))
+         return false;
+      else
+      {  SimplePrincipal principal = (SimplePrincipal)another;
+         return name.equals(principal.getName());
+      }
+   }
+
+   public String getName()
+   {  return name;
+   }
+
+   public int hashCode()
+   {  return name.hashCode();
+   }
+
+   public String toString()
+   {  return "SimplePrincipal with name " + name;
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+A JAAS-compatible authentication service provides an implementation of the
+\begin{code}LoginModule\end{code} interface, authenticating in a way
+suitable for that type of service.
+Authentication with a \begin{code}LoginModule\end{code} is performed
+in two steps. Firstly, the \begin{code}login\end{code} method is used to
+attempt authentication of a \begin{code}Subject\end{code},
+using a provided \begin{code}CallbackHandler\end{code} to communicate
+with the user (such as to prompt for a user name and password and obtain
+the response).
+As the authentication process could require authentication by several
+successive \begin{code}LoginModule\end{code}, any of which might fail to authenticate
+the user,
+a \begin{code}LoginModule\end{code} has an \begin{code}abort\end{code} method
+to abort the authentication (which gets called if authentication fails in another
+\begin{code}LoginModule\end{code}), and a \begin{code}commit\end{code} method
+to add a suitable \begin{code}Principal\end{code} to the \begin{code}Subject\end{code}.
+As an example, the class \begin{code}SimpleLoginModule\end{code}
+performs authentication of a user via a \begin{code}NameCallback\end{code}
+and a \begin{code}PasswordCallback\end{code}.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that represents a simple JAAS LoginModule which performs
+   the authentication of a Subject via a specified CallbackHandler
+   and assigns a SimplePrincipal to the Subject if the authentication
+   is committed
+   @author Andrew Ensor
+*/
+package simplejaasmodule;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginException;
+import javax.security.auth.spi.LoginModule;
+
+public class SimpleLoginModule implements LoginModule
+{
+   // subject being authenticated
+   private Subject subject;
+   // handles communication with user in application-specific way
+   private CallbackHandler callbackHandler;
+   //credential sharing across multiple LoginModule for single sign on
+   private Map<String,?> sharedState;
+   // configuration options for this LoginModule (allows debug=true)
+   private Map<String,?> options;
+   private boolean debugEnabled;
+   private SimplePrincipal principal;
+   private boolean committed = false;
+   ...
+
+   public void initialize(Subject subject,
+      CallbackHandler callbackHandler, Map<String,?> sharedState,
+      Map<String,?> options)
+   {  this.subject = subject;
+      this.callbackHandler = callbackHandler;
+      this.sharedState = sharedState;
+      this.options = options;
+      if (options.get("debug").toString().equalsIgnoreCase("true"))
+         debugEnabled = true;
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   public boolean login() throws LoginException
+   {  principal = null;
+      committed = false;
+      if (callbackHandler == null)
+         throw new LoginException("No callback handler provided");
+      // prepare callbacks to pass to callbackHandler
+      NameCallback nameCallback = new NameCallback("user name:");
+      PasswordCallback passwordCallback
+         = new PasswordCallback("password:", false);
+      Callback[] callbacks = {nameCallback, passwordCallback};
+      try
+      {  callbackHandler.handle(callbacks);
+      }
+      catch (IOException e)
+      {  throw new LoginException(e.toString());
+      }
+      catch (UnsupportedCallbackException e)
+      {  throw new LoginException(e.toString());
+      }
+      // extract the credentials obtained by callbackHandler
+      String userName = nameCallback.getName();
+      char[] tempPassword = passwordCallback.getPassword();
+      if (tempPassword == null)
+         tempPassword = new char[0];
+      // copy the password to another array before it gets cleared
+      char[] password = new char[tempPassword.length];
+      System.arraycopy(tempPassword, 0, password, 0,
+         tempPassword.length);
+      passwordCallback.clearPassword();
+      // output debugging information
+      if (debugEnabled)
+      {  System.out.print("User entered:" + userName +
+            " with password:");
+         for (int i=0; i<password.length; i++)
+            System.out.print(password[i]);
+         System.out.println();
+      }
+      if (validate(userName, password))
+      {  principal = new SimplePrincipal(userName);
+         return true;
+      }
+      else
+      {  // don't wait for garbage collection to clear the password
+         Arrays.fill(password, ' ');
+         return false;
+      }
+   }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+   // helper method that tries to validate the user name and password
+   // note in practice this would be checked in a secure database
+   private boolean validate(String name, char[] password)
+   {  String validName = "Jack";
+      char[] validPassword = {'c','h','a','n','g','e','i','t'};
+      boolean validated = name.equals(validName) &&
+         password.length==validPassword.length;
+      if (validated)
+      {  for (int i=0; i<password.length; i++)
+            if (password[i] != validPassword[i])
+               validated = false;
+      }
+      // output debugging information
+      if (debugEnabled)
+         System.out.println("Authenticated user:" + validated);
+      return validated;
+   }
+
+   public boolean abort() throws LoginException
+   {  if (principal == null)
+         // own login failed so abort login is not performed
+         return false;
+      if (committed)
+         // all LoginModule login succeeded but one's commit failed
+         logout();
+      else  // another LoginModule login failed
+         principal = null;
+      return true; // abort was successful
+   }
+
+   public boolean commit() throws LoginException
+   {  if (principal == null)
+         // own login failed so can not commit login
+         return false;
+      if (!subject.getPrincipals().contains(principal))
+      {  subject.getPrincipals().add(principal);
+         if (debugEnabled)
+            System.out.println("SimplePrincipal added to subject");
+      }
+      principal = null;
+      committed = true;
+      return true;
+   }
+
+   public boolean logout() throws LoginException
+   {  subject.getPrincipals().remove(principal);
+      principal = null;
+      committed = false;
+      return true;
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+It should be remembered however that a \begin{code}LoginModule\end{code}
+would usually be implemented by a JAAS provider (such as a Kerberos provider)
+rather than by an application developer.
+As there might be several alternative authentication services available in a system,
+the \begin{code}LoginModule\end{code} can all be specified in a configuration file,
+from which a client application can choose which configuration to use
+for authentication.
+
+\begin{program}\begin{verbatim}
+/**
+   JAASExample.config login configuration file with some
+   configurations for a hypothetical distributed system
+*/
+
+SimpleLogin
+{  simplejaasmodule.SimpleLoginModule required debug=true;
+};
+
+KerberosLogin
+{  com.sun.security.auth.module.Krb5LoginModule required;
+};
+
+BiometricLogin
+{  com.csp.jaasmodule.BioLoginModule sufficient;
+   com.csp.jaasmodule.JavaCardLoginModule required matchOnCard="true";
+};
+\end{verbatim}\end{program}
+
+\noindent
+The name of this configuration file can be specified either when the
+client application is executed:
+\begin{quote}\begin{code}
+java -Djava.security.auth.login.config==JAASExample.config\dots
+\end{code}\end{quote}
+or else in the Java security properties file \begin{code}java.security\end{code}
+with the following lines:
+\begin{quote}\begin{code}
+login.configuration.provider=com.csp.JAASprovider \\
+login.config.url.1=\emph{path}/JAASExample.config
+\end{code}\end{quote}
+
+A client application can use JAAS to authenticate a user regardless of which
+authentication service is deployed in the system. First, a
+\begin{code}CallbackHandler\end{code} is prepared to handle the
+actual communication with the user in a way suitable for the application
+(such as via \begin{code}System.in\end{code} and \begin{code}System.out\end{code}
+or instead via a GUI). Then the client creates a \begin{code}LoginContext\end{code}
+which is used to log in and log out,
+specifying the name (given in the configuration file) of the login
+configuration to use, and a \begin{code}CallbackHandler\end{code} to use during
+the authentication:
+\begin{quote}\begin{code}\begin{verbatim}
+CallbackHandler callbackHandler = ...;
+LoginContext lc
+   = new LoginContext("SimpleLogin", callbackHandler);
+lc.login();
+Subject subject = lc.getSubject(); // authenticated subject
+...
+lc.logout();
+\end{verbatim}\end{code}\end{quote}
+The \begin{code}LoginContext\end{code} takes care of locating the appropriate
+\begin{code}LoginModule\end{code} specified in the configuration file and
+performs the necessary authentication(s).
+
+Once a \begin{code}Subject\end{code} has been obtained it can optionally be used to
+call a \begin{code}PrivilegedAction\end{code}, which has security-sensitive
+operations (such as file write access) in a \begin{code}run\end{code} method.
+In a security conscious system applications should not be allowed
+to run unrestricted (the default for a local Java application), but instead
+have a \defn{fine-grained security} as specified by a \defn{security policy}
+(typically determined by a system administrator).
+As described further in Section \ref{Se:SecuringCode}
+a security policy file consists of a series of \begin{code}grant\end{code}
+statements, each with optional signer field, a JAR file or URL codebase,
+and a principal, that together specify the code and/or user to which the permissions apply:
+\begin{quote}\begin{code}
+grant signedBy \emph{alias} codeBase \emph{uri} Principal \emph{PrinClass} \emph{name} \\
+\{\dbind permission \emph{SecurityPermissionClass} \emph{Action}; \\
+\trind \vdots \\
+\trind permission \emph{SecurityPermissionClass} \emph{Action}; \\
+\};
+\end{code}\end{quote}
+When the static \begin{code}Subject\end{code} method
+\begin{code}doAsPrivileged\end{code} is called, the \begin{code}run\end{code}
+method of the \begin{code}Privileged\\Action\end{code} is called using
+whatever security policies are in place for the specified subject.
+
+As an example, the class \begin{code}JAASExampleClient\end{code}
+demonstrates a simple client application that uses the
+class \begin{code}JAASExampleCallbackHandler\end{code} to handle
+communication with the user.
+The client application uses the \begin{code}"SimpleLogin"\end{code}
+configuration to attempt authentication of a user
+(if a Kerberos authentication server were available then this
+configuration could be swapped to \begin{code}"KerberosLogin"\end{code}).
+It then tries to use that user's security permission as specified in
+the security policy file \begin{code}JAASExample.policy\end{code}
+to perform a security-sensitive operation, attempting to write a file
+to the local drive.
+Although \begin{code}JAASExampleCallbackHandler\end{code}
+uses a \begin{code}Scanner\end{code} to handle the input of the
+user name, note that it is more much careful when obtaining the user's
+password, avoiding the creation of any string that might linger
+on the client machine, and erasing all details of the password beside
+that held in a single \begin{code}char[]\end{code} array.
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates how JAAS can be used to authenticate a
+   user and authorize whether the user can execute a PrivilegedAction
+   @author Andrew Ensor
+*/
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.PrivilegedAction;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
+public class JAASExampleClient implements PrivilegedAction<Boolean>
+{
+   // PrivilegedAction run method that contains security-sensitive
+   // operation and has any specified generic return type
+   public Boolean run()
+   {  try
+      {  FileWriter fw = new FileWriter("localfile.txt");
+         fw.write("JAAS says hello on local drive");
+         fw.close();
+         return true; // worked
+      }
+      catch (IOException e)
+      {  System.err.println("IO Exception while writing file: " + e);
+         return false; // failed
+      }
+   }
+
+   public static void main(String[] args)
+   {  PrivilegedAction<Boolean> privilegedAction
+         = new JAASExampleClient();
+      CallbackHandler callbackHandler=new JAASExampleCallbackHandler();
+      try
+      {  System.out.println("Creating login context");
+         LoginContext lc
+            = new LoginContext("SimpleLogin", callbackHandler);
+         System.out.println("Logging in");
+         lc.login();
+         Subject subject = lc.getSubject(); // authenticated subject
+         System.out.println("Executing security-sensitive operation");
+         // execute the privileged action as specified subject with
+         // no protection domains taken from current thread's context
+         boolean success = (Boolean)Subject.doAsPrivileged(subject,
+            privilegedAction, null);
+         System.out.println("Operation " +(success?"was":"not")
+            + " successful");
+         System.out.println("Logging out");
+         lc.logout();
+      }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+      catch (LoginException e)
+      {  System.err.println("Login Exception: " + e);
+      }
+      catch (SecurityException e)
+      {  System.err.println("Security Exception: " + e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that represents a simple JAAS CallbackHandler that just
+   uses System.in and System.out to communicate with the user
+   Note a more elaborate CallbackHandler might eg use a GUI
+   @see JAASExampleClient.java
+*/
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.PushbackInputStream;
+import java.util.Arrays;
+import java.util.Scanner; // Java 1.5 equivalent of cs1.Keyboard
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.TextOutputCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+public class JAASExampleCallbackHandler implements CallbackHandler
+{
+   private Scanner keyboardInput;
+
+   public JAASExampleCallbackHandler()
+   {  keyboardInput = new Scanner(System.in);
+   }
+
+   public void handle(Callback[] callbacks)
+      throws IOException, UnsupportedCallbackException
+   {  if (callbacks == null)
+         return; // no callbacks to handle
+      for (int i=0; i<callbacks.length; i++)
+      {  if (callbacks[i] instanceof TextOutputCallback)
+         {  TextOutputCallback callback
+               = (TextOutputCallback)callbacks[i];
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+            switch (callback.getMessageType())
+            {  case TextOutputCallback.INFORMATION:
+                  System.out.println(callback.getMessage());
+                  break;
+               case TextOutputCallback.ERROR:
+                  System.out.println("ERROR:"+callback.getMessage());
+                  break;
+               case TextOutputCallback.WARNING:
+                  System.out.println("WARNING:"+callback.getMessage());
+                  break;
+               default:
+                  throw new IOException("Unsupported message type: "
+                     + callback.getMessageType());
+            }
+         }
+         else if (callbacks[i] instanceof NameCallback)
+         {  NameCallback callback = (NameCallback)callbacks[i];
+            // prompt user for name and get name using Scanner
+            System.out.print(callback.getPrompt());
+            callback.setName(keyboardInput.nextLine());
+         }
+         else if (callbacks[i] instanceof PasswordCallback)
+         {  PasswordCallback callback=(PasswordCallback)callbacks[i];
+            // prompt user for password and get using util method
+            System.out.print(callback.getPrompt());
+            callback.setPassword(readPassword(System.in));
+         }
+         else
+            throw new UnsupportedCallbackException(callbacks[i],
+               "Unsupported callback");
+      }
+   }
+
+   // utility method that obtains a password from an InputStream
+   // without storing the password in any String
+   private char[] readPassword(InputStream is) throws IOException
+   {  final int INITIAL_CAPACITY = 128;
+      char[] buffer = new char[INITIAL_CAPACITY];
+      int numChars = 0; // number of characters currently in buffer
+      boolean done = false;
+      while (!done)
+      {  int ch = is.read();
+         switch (ch)
+         {  case -1:
+            case '\n':
+               done = true;
+               break;
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+            case '\r':
+               int nextChar = is.read();
+               if ((nextChar != '\n') && (nextChar != -1))
+               {  if (!(is instanceof PushbackInputStream))
+                     is = new PushbackInputStream(is);
+                  ((PushbackInputStream)is).unread(nextChar);
+               }
+               else
+                  done = true;
+               break;
+            default:
+               if (numChars >= buffer.length)
+               {  // buffer full so allocate a new larger buffer
+                  char[] newBuffer = new char[buffer.length*2];
+                  System.arraycopy(buffer, 0, newBuffer, 0, numChars);
+                  Arrays.fill(buffer, ' '); // clear old buffer
+                  buffer = newBuffer;
+               }
+               buffer[numChars++] = (char)ch;
+               break;
+         }
+      }
+      if (numChars == 0)
+         return null;
+      // copy used portion of buffer to new buffer that gets returned
+      char[] returnBuffer = new char[numChars];
+      System.arraycopy(buffer, 0, returnBuffer, 0, numChars);
+      Arrays.fill(buffer, ' '); // clear buffer
+      return returnBuffer;
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+\begin{exercise}[Fine-Grained Security Permissions]
+  Test the class \begin{code}JAAS\-ExampleClient\end{code} with and
+  without a restricted security policy specified at runtime,
+  and arrange for several users to be granted different security permissions.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Electronic Mail Security                                                      %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Electronic Mail Security}
+
+\reading{pp438-474}
+
+When a user sends an email from a email client program
+the message is first communicated via the \defn{Simple Mail Transfer Protocol} (SMTP)
+to a mail server on the network
+(such as \begin{code}mail.aut.ac.nz\end{code} on the AUT network
+or \begin{code}smtp1.voda\-fone.net.nz\end{code} on the Vodafone network),
+which runs an SMTP service on port 25 and has responsibility for processing all
+incoming and outgoing email.
+The client starts the communication by identifying itself (\begin{code}HELO\end{code})
+and telling the server it has an email (\begin{code}MAIL FROM\end{code}) to deliver to
+one or more recipients (\begin{code}RCPT TO\end{code}), followed by the contents
+of the email (\begin{code}DATA\end{code}).
+The contents of an email that adheres to the original \defn{RFC 822} standard
+consists of a header (usually including fields such
+as \begin{code}Date\end{code}, \begin{code}From\end{code}, \begin{code}To\end{code},
+and \begin{code}Subject\end{code}), followed by a blank line and the text body
+of the message using 7-bit ASCII character encoding.
+It then indicates to the server that it has completed
+(a \begin{code}.\end{code} followed by \begin{code}QUIT\end{code}).
+\begin{quote}\begin{code}
+HELO \emph{clientURL} \\
+MAIL FROM: \emph{sender@aut.ac.nz} \\
+RCPT TO: \emph{recipient@aut.ac.nz} \\
+DATA \\
+Date: \emph{1/1/2007 12:30pm} \\
+From: \emph{sender@whitehouse.com} \\
+To: \emph{recipient@aut.ac.nz} \\
+Subject: \emph{subject} \\
+\\
+\emph{Text Message} \\
+. \\
+QUIT \\
+\end{code}\end{quote}
+The mail server responds to each directive with a numerical code and a message that
+indicates the success or failure of the requested operation.
+When a mail server receives an email message it checks whether it has an inbox for
+the message recipient, and if not it relays (forwards) the email to another mail server
+closer to the recipient's address.
+
+When an email message arrives at the destination mail server it is stored in a file
+until the email client program of the recipient accesses it.
+The \defn{Post Office Protocol} (POP) can be used to retrieve the mail for
+the recipient and remove it from the server.
+Instead, the \defn{Internet Message Access Protocol} (IMAP) is a more advanced protocol
+that can be used.
+IMAP allows email messages to be stored on the mail server in folders rather than
+requiring them to be downloaded to a client. Thus IMAP makes the mailbox folders
+available across the network to the user but places a larger storage burden on the mail server.
+
+\noindent
+\begin{center}\begin{pspicture}(0,0.2)(12,3.1)
+  \rput(1,0.75){\ovalnode{S}{\makebox[10mm]{\scriptsize Sender}}}
+  \rput(3,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{MS}{\makebox[12mm]%
+    {\scriptsize\begin{tabular}{c}Sender's\\Mail Server\end{tabular}}}}
+  \rput(6,2.5){\rnode{I}{\scriptsize\begin{tabular}{c}Intermediate\\Mail Servers\end{tabular}}}
+  \rput(9,2.5){\ovalnode[fillcolor=white,fillstyle=solid]{MR}{\makebox[12mm]%
+    {\scriptsize\begin{tabular}{c}Recipient's\\Mail Server\end{tabular}}}}
+  \rput(11,0.75){\ovalnode{R}{\makebox[10mm]{\scriptsize Recipient}}}
+  \ncline[arrows=->,linecolor=red,linewidth=1mm]{S}{MS}\naput{\scriptsize SMTP}
+  \ncline[arrows=->,linecolor=red,linewidth=1mm]{MS}{I}\naput{\scriptsize SMTP}
+  \ncline[arrows=->,linecolor=red,linewidth=1mm]{I}{MR}\naput{\scriptsize SMTP}
+  \ncline[arrows=->,linecolor=red,linewidth=1mm]{MR}{R}\naput{\scriptsize POP or IMAP}
+\end{pspicture}\end{center}
+
+Although email is one of the most heavily utilized network-based applications
+it is usually completely insecure, providing no confidentiality nor authentication of
+the user or message contents.
+By default email messages are passed unencrypted between servers, any of which
+could modify the message, replay an old message, or create a new message
+with a fabricated sender identity.
+Furthermore, each message includes the client URL and often information about
+the client email program, which raises privacy issues.
+
+There are two standard alternative approaches for providing confidentiality and/or
+authentication of email, PGP and S/MIME.
+\defn{Pretty Good Privacy} (PGP) relies on a \defn{web of trust},
+rather than a centralized CA, to decide the validity of a received public key,
+allowing the user to assign a level of trust to each public key it receives from other users.
+Since its introduction in 1991 PGP has been very popular amongst Internet users
+for providing secure personal email.
+It offers five services which get applied to a message in the following order:
+\begin{description}
+  \item[authentication] with a hash code created using SHA-1 which is then
+  encrypted using either DSA or RSA with the sender's private key,
+  \item[compression] using ZIP compression to reduce the size of the transmitted message
+  and eliminate repeated patterns in the plaintext,
+  \item[confidentiality] using either triple DES or CAST-128 (a 64-bit block cipher
+  that uses a 128-bit key), with a (single-use) secret session key that has been generated
+  specifically for encrypting that message,
+  \item[transfer encoding] using Base 64 encoding so that the compressed and encrypted
+  message can be transmitted as text content via SMTP,
+  \item[segmentation] of long messages into several smaller segments which are
+  mailed separately and reassembled at the receiving end.
+\end{description}
+The content of a PGP message consists of three parts, a session key component, a signature
+component, and the message itself.
+Both the signature component and the message component are first compressed and then
+encrypted using the secret session key, and then the entire message content
+(including the session key component) gets encoded using Base 64 encoding.
+In case the sender or recipient might have several public/private key pairs in use
+the message includes a key identifer for the public key of each to help identify
+which key has been used for encryption (simply providing the least significant
+64 bits of the public key).\nudgedown{1}
+\begin{center}
+\begin{tabular}{|l|l|} \hline
+  Session   & Least significant 64 bits of recipient's public key \\
+  key       & Session key encrypted using recipient's public key \\ \hline
+            & Timestamp \\
+  Signature & Least significant 64 bits of sender's public key \\
+            & First 16 bits of hash code \\
+            & Hash code encrypted using sender's private key \\ \hline
+            & Filename \\
+  Message   & Timestamp \\
+            & Message Data \\ \hline
+\end{tabular}\nudgedown{1}
+\end{center}
+The \defn{Secure/Multipurpose Internet Mail Extension} (S/MIME) provides digital signatures
+and encryption for the standard MIME mail format, which itself extends the message format
+of RFC 822 to allow non-ASCII character sets, non-text attachments, and multi-part message bodies.
+The following MIME types can be specified in the \begin{code}Content-type\end{code} header
+field of a MIME message:
+\begin{description}
+  \item[application] such as \begin{code}application/java-archive\end{code} for
+  JAR attachments and \begin{code}application/\\msword\end{code} for MS Word documents,
+  \item[audio] such as \begin{code}audio/x-midi\end{code} and
+  \begin{code}audio/x-wav\end{code} for audio data,
+  \item[image] such as \begin{code}image/jpeg\end{code} and
+  \begin{code}image/png\end{code} for image data,
+  \item[message] such as \begin{code}message/partial\end{code} for fragmentation
+  of large messages and \begin{code}message/external-\\body\end{code} for
+  references to external content,
+  \item[multi-part] such as \begin{code}multipart/mixed\end{code} for several
+  independent message parts and \begin{code}multipart/\\alternative\end{code} for
+  several alternative forms of the same information, where the parts are
+  separated by specified boundary strings,
+  \item[text] such as \begin{code}text/plain\end{code} for plain unformatted
+  ASCII text and \begin{code}text/html\end{code} for HTML content,
+  \item[video] such as \begin{code}video/mpeg\end{code} and
+  \begin{code}video/quicktime\end{code} for video data.
+\end{description}
+MIME also allows the transfer encoding scheme, such as \begin{code}7bit\end{code}
+(for no encoding) or \begin{code}base64\end{code},
+to be specified in the \begin{code}Content-Transfer-Encoding\end{code} header field.
+The S/MIME content type \begin{code}application/pkcs7-mime\end{code} is used to
+specify a digital signature and/or encryption of a MIME message or part of it.
+Signatures are created using SHA-1 (or the less secure MD5) to generate a hash code that
+gets encrypted using the sender's private key and then Base 64 encoded.
+As in PGP, encryption is performed using triple DES (or possibly AES) with a single-use secret
+session key that has been generated specifically for encrypting that message,
+and the resulting ciphertext is referred to as \defn{enveloped data}.
+
+The \defn{JavaMail} API is included as part of Java Enterprise Edition, but is
+also available as an optional API for Java Standard Edition.
+Although TCP can be used directly to communicate with a mail server for sending
+email via SMTP, and retrieving email via either POP or IMAP,
+JavaMail can be used to facilitate the process, hiding the details of each protocol.
+The JavaMail API requires the \defn{JavaBeans Activation Framework} (JAF) API,
+which supports handling arbitrary blocks of data and determining their correct MIME types.
+Surprisingly, version 1.5 of JavaMail does not yet support PGP nor S/MIME
+(it is awaiting finalization of the S/MIME IETF specification), so encryption
+and authentication must either be added to messages or else a third-party extension
+to JavaMail used.
+The \begin{code}Session\end{code} class in the \begin{code}javax.mail\end{code} package
+defines a session with a mail server. Its static \begin{code}getDefaultInstance\end{code} method
+is passed the mail server URL in a \begin{code}Properties\end{code} object and
+an optional \begin{code}Authenticator\end{code} which prompts for the user name and
+password as required (and which can be designed to have single sign-on capability),
+returning a default (shared) mail session:
+\begin{quote}\begin{code}\begin{verbatim}
+Properties properties = System.getProperties();
+properties.put("mail.smtp.host", HOST); // or pop3 or imap
+Authenticator authenticator = ...; // or null if not required
+Session session = Session.getDefaultInstance(properties,
+   authenticator);
+\end{verbatim}\end{code}\end{quote}
+To send a message a \begin{code}MimeMessage\end{code} can be created
+from the session and the \begin{code}Transport\end{code} method
+\begin{code}send\end{code} used to send the message to the mail server via SMTP:
+\begin{quote}\begin{code}\begin{verbatim}
+MimeMessage message = new MimeMessage(session);
+message.setFrom(...);
+message.addRecipient(Message.RecipientType.TO, ...);
+... // set content of message
+Transport.send(message);
+\end{verbatim}\end{code}\end{quote}
+To retrieve mail from a mail server a \begin{code}Store\end{code} is used via either POP or IMAP:
+\begin{quote}\begin{code}\begin{verbatim}
+Store store = session.getStore("pop3");
+store.connect();
+\end{verbatim}\end{code}\end{quote}
+which provides access to the mailbox folders on the mail server.
+The example classes \begin{code}EMailSender\end{code} and \begin{code}EMailReceiver\end{code}
+demonstrate how JavaMail can be used to send a multipart message and retrieve the
+messages in the \begin{code}INBOX\end{code} folder.
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates the optional JavaMail API for sending
+   email messages with multiple MIME parts in the body of the message
+   Note this class needs the optional JavaMail to compile, place the
+   JAR file mail.jar in classpath
+   @author Andrew Ensor
+*/
+import java.util.Properties;
+import java.util.Scanner; // Java 1.5 equivalent of cs1.Keyboard
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
+import javax.mail.BodyPart;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.MimeMessage;
+
+public class EMailSender
+{
+   private static final String HOST = "smtp.aut.ac.nz";
+
+   public static void main(String[] args)
+   {  Properties properties = System.getProperties();
+      properties.put("mail.smtp.host", HOST);
+      // obtain the sender and recipient email addresses
+      Scanner keyboardInput = new Scanner(System.in);
+      System.out.print("Please enter sender address:");
+      String from = keyboardInput.nextLine();
+      System.out.print("Please enter recipient address:");
+      String to = keyboardInput.nextLine();
+      System.out.print("Please enter file to attach:");
+      String filename = keyboardInput.nextLine();
+      // obtain shared default mail session
+      Session session = Session.getDefaultInstance(properties, null);
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+      // create a message
+      MimeMessage message = new MimeMessage(session);
+      try
+      {  message.setFrom(new InternetAddress(from));
+         message.addRecipient(Message.RecipientType.TO,
+            new InternetAddress(to));
+      }
+      catch (AddressException e)
+      {  System.err.println
+            ("Address exception while preparing addresses: " + e);
+      }
+      catch (MessagingException e)
+      {  System.err.println
+            ("Messaging exception while preparing addresses: " + e);
+      }
+      try
+      {  message.setSubject("Greeting");
+         // prepare a MIME part that will default to text/plain
+         BodyPart textPart = new MimeBodyPart();
+         textPart.setText("Hello EMail World");
+         // prepare a MIME part whose content type determined by JAF
+         BodyPart filePart = new MimeBodyPart();
+         DataSource fileSource = new FileDataSource(filename);
+         filePart.setDataHandler(new DataHandler(fileSource));
+         filePart.setFileName(filename);
+         // prepare a multipart message using the two body parts
+         Multipart multipart = new MimeMultipart();
+         multipart.addBodyPart(textPart);
+         multipart.addBodyPart(filePart);
+         message.setContent(multipart);
+         // send the message
+         Transport.send(message);
+         System.out.println("Message sent");
+      }
+      catch (MessagingException e)
+      {  System.err.println("Messaging exception: " + e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates the optional JavaMail API for receiving
+   email messages from a POP or IMAP mail server
+   Note this class needs the optional JavaMail to compile, place the
+   JAR file mail.jar in classpath
+   @author Andrew Ensor
+*/
+import java.util.Properties;
+import javax.mail.Authenticator;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
+import javax.mail.Session;
+import javax.mail.Store;
+
+public class EMailReceiver
+{
+   private static final String HOST = "pop.aut.ac.nz"; // AUT student
+
+   public static void main(String[] args)
+   {  Properties properties = System.getProperties();
+      properties.put("mail.pop3.host", HOST);
+      // obtain shared default mail session
+      Authenticator authenticator = new SimpleAuthenticator();
+      Session session = Session.getDefaultInstance(properties,
+         authenticator);
+      // connect to mailbox store
+      Store store = null;
+      try
+      {  store = session.getStore("pop3"); // POP server
+      }
+      catch (NoSuchProviderException e)
+      {  System.err.println("Mail provider not available: " + e);
+      }
+      Folder folder = null;
+      try
+      {  store.connect(); // use authenticator for user log in
+         System.out.println("Connected to mail inbox");
+         // obtain messages in specified folder
+         folder = store.getFolder("INBOX");
+         folder.open(Folder.READ_ONLY);
+         Message[] messages = folder.getMessages();
+         System.out.println("Messages currently in inbox:");
+         for (int i=0; i<messages.length; i++)
+         {  Message message = messages[i];
+            System.out.println("Message from " + message.getFrom()[0]
+               + " with subject " + message.getSubject());
+         }
+      }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+      catch (MessagingException e)
+      {  System.err.println("Messaging exception: " + e);
+      }
+      finally
+      {  try
+         {  if (folder != null)
+               folder.close(false); // don't expunge deleted folders
+            if (store != null)
+               store.close();
+         }
+         catch (MessagingException e)
+         {} // ignore
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that provides a simple Authenticator for EMailReceiver
+   Note that this class does not obtain and store the password in
+   a secure manner
+   @see EMailReceiver.java
+*/
+import java.util.Scanner; // Java 1.5 equivalent of cs1.Keyboard
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+
+public class SimpleAuthenticator extends Authenticator
+{
+   private Scanner keyboardInput;
+
+   public SimpleAuthenticator()
+   {  keyboardInput = new Scanner(System.in);
+   }
+
+   public PasswordAuthentication getPasswordAuthentication()
+   {  // prompt user for name and get name using Scanner
+      System.out.print("Please enter user name:");
+      String username = keyboardInput.nextLine();
+      // prompt user for password and get using Scanner
+      System.out.print("Please enter password:");
+      String password = keyboardInput.nextLine(); // not secure here
+      return new PasswordAuthentication(username, password);
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\begin{exercise}[Adding a Message Signature]
+Modify \begin{code}EMailSender\end{code} so that it adds
+a digital signature as a MIME part to an email message.
+\end{exercise}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Web Security                                                                  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\section{Web Security}\label{Se:WebSecurity}
+
+\reading{pp484-498,528-549}
+
+\begin{multicols}{2}
+Using an authentication service such as Kerberos, or secure email via PGP or S/MIME,
+presumes that the communication in a system is insecure, and so security is
+provided at the application level. A complementary approach to ensuring security in a system is to secure the network
+communication channels, either at the network protocol or at the transport protocol level.
+By implementing security at the IP level, all network communication is made secure
+transparently to the applications in the system.
+
+\begin{pspicture}[shift=-1.2](0,-0.25)(6,2.2)
+  \rput(3,2.7){\emph{Application Level Security}}
+  \psline[fillcolor=yellow,fillstyle=solid](0,0)(0,0.6)(6,0.6)(6,0)(0,0)
+  \rput(3,0.3){IP}
+  \psline[fillcolor=yellow,fillstyle=solid](0,0.6)(0,1.2)(2,1.2)(2,0.6)(0,0.6)
+  \psline[fillcolor=yellow,fillstyle=solid](2,0.6)(2,1.2)(6,1.2)(6,0.6)(2,0.6)
+  \rput(1,0.9){UDP}\rput(4,0.9){TCP}
+  \psline[fillcolor=lightred,fillstyle=solid](1,1.2)(1,1.8)(2,1.8)(2,1.2)(1,1.2)
+  \rput(1.5,1.6){\scriptsize Kerb}\rput(1.5,1.375){\scriptsize -eros}
+  \psline[fillcolor=yellow,fillstyle=solid](2,1.2)(2,1.8)(4,1.8)(4,1.2)(2,1.2)
+  \psline[fillcolor=yellow,fillstyle=solid](4,1.2)(4,1.8)(6,1.8)(6,1.2)(4,1.2)
+  \rput(3,1.5){HTTP}\rput(5,1.5){SMTP}
+  \psline[fillcolor=lightred,fillstyle=solid](4,1.8)(4,2.4)(5,2.4)(5,1.8)(4,1.8)
+  \psline[fillcolor=lightred,fillstyle=solid](5,1.8)(5,2.4)(6,2.4)(6,1.8)(5,1.8)
+  \rput(4.5,2.1){\scriptsize PGP}\rput(5.5,2.1){\scriptsize S\hspace{-0.5mm}/\hspace{-0.5mm}MIME}
+\end{pspicture}
+\end{multicols}
+\begin{multicols}{2}
+\defn{IP security} (IPSec) provides authentication, confidentiality, and key management
+capabilities for IP packets (optional for IPv4 but mandatory for the newer IPv6).
+It is implemented as extension headers that follow the main IP header in each packet.
+Encryption is provided by a cipher such as triple DES or Blowfish, and authentication
+by HMAC with either MD5 or SHA-1 (but producing a 96 bit MAC by default).
+Secret keys are distributed using a version of Diffie-Hellman key exchange known
+as \defn{Oakley key exchange}, which provides added security by using cookies to
+counter clogging attacks, nonces for replay attacks, and authentication for
+man-in-the-middle attacks.\nudgedown{1}
+
+\begin{pspicture}[shift=-1.2](0,-0.25)(6,2.2)
+  \rput(3,2.1){\emph{Network Level Security}}
+  \psline[fillcolor=lightred,fillstyle=solid](0,0)(0,0.6)(6,0.6)(6,0)(0,0)
+  \rput(3,0.3){IP/IPSec}
+  \psline[fillcolor=yellow,fillstyle=solid](0,0.6)(0,1.2)(2,1.2)(2,0.6)(0,0.6)
+  \psline[fillcolor=yellow,fillstyle=solid](2,0.6)(2,1.2)(6,1.2)(6,0.6)(2,0.6)
+  \rput(1,0.9){UDP}\rput(4,0.9){TCP}
+  \psline[fillcolor=yellow,fillstyle=solid](2,1.2)(2,1.8)(4,1.8)(4,1.2)(2,1.2)
+  \psline[fillcolor=yellow,fillstyle=solid](4,1.2)(4,1.8)(6,1.8)(6,1.2)(4,1.2)
+  \rput(3,1.5){HTTP}\rput(5,1.5){SMTP}
+\end{pspicture}
+\end{multicols}
+\begin{multicols}{2}
+The \defn{Secure Sockets Layer} (SSL) and its Internet standard version
+\defn{Transport Layer Security} (TLS) provide confidentiality and authentication
+for applications that use TCP communication.
+It establishes an \defn{SSL session} between a client and a server using a set of security parameters, which are shared for several secure
+\defn{SSL connections} between the client and server.
+The parameters specify a session identifier, the algorithms used for compression
+and encryption, and hash functions used for MAC calculations. They also
+include a secure 384-bit \defn{master secret} shared by both the client and server.
+This value is calculated from a 384-bit \defn{pre-master-secret}
+(either by the client and sent to the server encrypted using the RSA public key
+of the server, or else via Diffie-Hellman key exchange) using a combination
+of MD5 and SHA-1, and is used to determine any secret keys and
+initialization vectors required during the session.
+
+\begin{pspicture}[shift=-1.3](0,-0.25)(6,2.4)
+  \rput(3,2.7){\emph{Transport Level Security}}
+  \psline[fillcolor=yellow,fillstyle=solid](0,0)(0,0.6)(6,0.6)(6,0)(0,0)
+  \rput(3,0.3){IP}
+  \psline[fillcolor=yellow,fillstyle=solid](0,0.6)(0,1.2)(2,1.2)(2,0.6)(0,0.6)
+  \psline[fillcolor=yellow,fillstyle=solid](2,0.6)(2,1.2)(6,1.2)(6,0.6)(2,0.6)
+  \rput(1,0.9){UDP}\rput(4,0.9){TCP}
+  \psline[fillcolor=lightred,fillstyle=solid](2,1.2)(2,1.8)(6,1.8)(6,1.2)(2,1.2)
+  \rput(4,1.5){SSL or TLS}
+  \psline[fillcolor=yellow,fillstyle=solid](2,1.8)(2,2.4)(4,2.4)(4,1.8)(2,1.8)
+  \psline[fillcolor=yellow,fillstyle=solid](4,1.8)(4,2.4)(6,2.4)(6,1.8)(4,1.8)
+  \rput(3,2.1){HTTP}\rput(5,2.1){SMTP}
+\end{pspicture}
+\end{multicols}
+
+
+
+Both SSL and TLS use X.509 certificates to provide authentication.
+In order for the server to authenticate itself it must deliver a valid certificate
+to the client, for which the client can establish a certificate chain to a certificate that
+it already trusts, and then the server must prove that it is indeed the subject
+of the certificate by successfully decrypting something (such as the pre-master-secret),
+which can only be done by the holder of the private key.
+Optionally, the client too can be made to authenticate
+itself to the server using its certificate.
+The authentication steps are automated by the protocol so long as the server and client
+have appropriate certificates.
+
+SSL and TLS process data before they get sent via TCP by breaking the data into fragments
+of up to 16384 bytes and applying the following steps to each fragment:
+\begin{itemize}
+  \item firstly the fragment can optionally be compressed,
+  \item a 128-bit or 160-bit MAC is calculated for the compressed data
+  (TLS uses HMAC with either MD5 or SHA-1, whereas SSL uses an older variant of HMAC),
+  and is appended to the compressed fragment,
+  \item the entire fragment (including the MAC) is then encrypted using a block
+  cipher such as AES, DES, or triple DES (padding the fragment so that the final
+  padding byte gives the number of bytes of padding added),
+  or else using the RC4 stream cipher (with no padding required),
+  \item a five byte SSL header is prepended to the fragment to indicate the type of SSL fragment,
+  the major protocol version (currently \begin{code}3\end{code} for both SSL and TLS),
+  the minor protocol version (\begin{code}0\end{code} for SSL and currently
+  \begin{code}1\end{code} for TLS), and two bytes that give the length of the fragment.
+\end{itemize}
+The resulting fragments are then communicated via TCP.
+There are four types of SSL fragment that can be communicated:
+\begin{description}
+  \item[application data] where the data in the fragment has originated from an
+  application that is using an application level protocol such as HTTP or SMTP for communication,
+  \item[change cipher] where the data is a single fixed byte \begin{code}01\end{code},
+  indicating that the cipher suite for the connection is to be updated with
+  the next pending values,
+  \item[alert] where the data consists of two alert bytes, the first byte a
+  \begin{code}01\end{code} (a warning) or \begin{code}02\end{code}
+  (a fatal error which results in the connection being terminated),
+  and the second byte a code to indicate the specific alert
+  (such as a warning alert that a certificate was not provided during
+  authentication, or a fatal alert about an incorrect MAC),
+  \item[handshake] where the client and server negotiate details for establishing the connection,
+  consisting of a byte to indicate one of 10 possible types of message,
+  three bytes to indicate the length of parameters, followed by the parameters
+  (such as an encrypted key or an X.509 certificate).
+\end{description}
+The handshaking is used to have the server authenticate itself to
+the client (and possibly also the client to the server), create the master secret,
+and establish which encryption, compression, and MAC algorithms will be used during
+communication.
+Handshaking proceeds in four phases:
+\begin{description}
+  \item[Establish security capabilities]
+  The client initiates the handshake by sending a \begin{code}client\_hello\end{code}
+  message requesting a protocol version, preferred security algorithms, and a nonce value,
+  which the server responds to with a \begin{code}server\_hello\end{code}
+  message specifying its choice of algorithms, and its own nonce value.
+  \item[Server authentication and key exchange]
+  The server then sends a \begin{code}certi\-ficate\end{code} message holding a
+  certificate for the server, then (if required by the encryption algorithm) a
+  \begin{code}server\_key\_exchange\end{code}
+  containing server key parameters and a signature
+  using the nonce values, an optional \begin{code}certifi\-cate\_request\end{code}
+  message requesting a certificate from the client, followed by a
+  \begin{code}server\_done\end{code} message.
+  \item[Client authentication and key exchange]
+  The client continues by sending a \begin{code}certificate\end{code} message if requested,
+  then a compulsory \begin{code}client\_key\_exch\-ange\end{code} containing client key parameters
+  and a signature, optionally followed by a \begin{code}certificate\_verify\end{code}
+  message that uses the client's private key to encrypt a hash code of the handshake message
+  (to prove that the client does possess the private key corresponding to the public key
+  provided in the certificate).
+  \item[Finish handshake] Finally the client and server notify each other to start using
+  the cipher. The client sends a \begin{code}change\_cipher\_spec\end{code}
+  message and a \begin{code}finished\end{code} message, and the server responds with
+  a \begin{code}change\_cipher\_spec\end{code} message and its own
+  \begin{code}finished\end{code} message.
+\end{description}
+
+The \defn{Java Secure Socket Extension} (JSSE) is an API included with Java Standard Edition
+that provides an implementation of SSL/TLS.
+It includes functionality for data encryption, server authentication, message integrity,
+and optional client authentication, hiding the protocol details for cipher suite negotiation
+and the initial handshaking.
+A keystore that holds trusted certificates used to verify received certificates
+during handshaking is called a \defn{truststore}.
+The keystore and/or truststore to be used by JSSE
+can either be specified as command line arguments when the client or server is run:
+\begin{quote}\begin{code}
+java -Djavax.net.ssl.trustStore=\emph{mytruststore.jks} \\
+\trind -Djavax.net.ssl.trustStorePassword=\emph{mytrustpw} \\
+\trind -Djavax.net.ssl.keyStore=\emph{mykeystore.jks} \\
+\trind -Djavax.net.ssl.keyStorePassword=\emph{mystorepw} \emph{WhateverClass}
+\end{code}\end{quote}
+or else specified via the \begin{code}System\end{code} method \begin{code}setProperty\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+System.setProperty("javax.net.ssl.trustStore", "...");
+System.setProperty("javax.net.ssl.trustStorePassword","...");
+System.setProperty("javax.net.ssl.keyStore", "...");
+System.setProperty("javax.net.ssl.keyStorePassword", "...");
+\end{verbatim}\end{code}\end{quote}
+Once JSSE is provided with a truststore an SSL/TLS client can be
+implemented similarly to an (insecure) TCP client by creating an \begin{code}SSLSocket\end{code}
+via an \begin{code}SSLSocketFactory\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+SSLSocketFactory sslFactory
+   = (SSLSocketFactory)SSLSocketFactory.getDefault();
+SSLSocket socket
+   = (SSLSocket)sslFactory.createSocket(HOST_NAME,HOST_PORT);
+socket.startHandshake(); //optional,happens anyway when flush
+...
+socket.close();
+\end{verbatim}\end{code}\end{quote}
+Also, once JSSE is provided with a keystore an SSL/TLS server can use an
+\begin{code}SSLServerSocketFac-\\tory\end{code} to create an \begin{code}SSLServerSocket\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+SSLServerSocketFactory sslServerFactory
+   = (SSLServerSocketFactory)
+   SSLServerSocketFactory.getDefault();
+SSLServerSocket serverSocket = (SSLServerSocket)
+   sslServerFactory.createServerSocket(PORT);
+SSLSocket socket = (SSLSocket)serverSocket.accept();
+socket.setWantClientAuth(true); // either none, want, or need
+...
+socket.close();
+serverSocket.close();
+\end{verbatim}\end{code}\end{quote}
+Optionally, the cipher algorithms negotiated during the handshaking
+can be restricted by specifying the allowable algorithms to either the
+\begin{code}SSLServerSocket\end{code} or \begin{code}SSLSocket\end{code}:
+\begin{quote}\begin{code}\begin{verbatim}
+String[] enabledSuites = {"TLS_RSA_WITH_AES_128_CBC_SHA"};
+socket.setEnabledCipherSuites(enabledSuites);
+\end{verbatim}\end{code}\end{quote}
+
+As an example, the classes \begin{code}SSLEchoClient\end{code} and
+\begin{code}SSLEchoServer\end{code} demonstrate how SSL/TLS can be used
+to ensure confidentiality and authentication of communication between a
+TCP client and server.
+The server uses a keystore called \begin{code}jssekeystore.jks\end{code}
+to select a public/private key pair and send a certificate for the public key.
+The client uses a truststore called \begin{code}jssetruststore.jks\end{code}
+to check the received certificate against its own trusted certificates.
+The following three command line statements can be used to create the keystore and
+generate an RSA key pair, export a corresponding self-signed certificate,
+and import the certificate to a new truststore
+(so that it is immediately verified without actually building a certificate chain
+to a CA):
+\begin{quote}\begin{code}\begin{verbatim}
+keytool -genkey -alias ssltest -keyalg RSA
+   -keystore jssekeystore.jks
+keytool -export -alias ssltest -file ssltest.cer
+   -keystore jssekeystore.jks
+keytool -import -alias ssltest -file ssltest.cer
+   -keystore jssetruststore.jks
+\end{verbatim}\end{code}\end{quote}
+The communication between the client and server during handshaking can be displayed by
+enabling the \emph{dynamic debug tracing} support, running the server via the
+command line statement:
+\begin{quote}\begin{code}\begin{verbatim}
+java -Djavax.net.debug=SSL,handshake,data,trustmanager
+   SSLEchoServer
+\end{verbatim}\end{code}\end{quote}
+
+As JSSE uses the cryptographic capabilities of the JCA, it can be configured
+to use a cryptographic token such as a smart card or a hardware cryptographic accelerator
+via PKCS\#11.
+To use a smart card as a keystore or truststore the
+\begin{code}javax.net.ssl.keyStoreType\end{code} or
+\begin{code}javax.net.\\ssl.trustStoreType\end{code} system property
+should be set to \begin{code}"pkcs11"\end{code}, and the
+\begin{code}javax.net.ssl.key\\Store\end{code} or
+\begin{code}javax.net.ssl.trustStore\end{code} system property to
+\begin{code}"NONE"\end{code}.
+Also, JSSE has support for Kerberos cipher suites provided that both the
+SSL/TLS client and server have accounts with the Kerberos authentication server,
+in which case JAAS and a Kerberos \begin{code}LoginModule\end{code} can be used
+to obtain the necessary Kerberos credentials.
+
+The \begin{code}java.net\end{code} class \begin{code}URL\end{code} supports
+\defn{HTTP over SSL/TLS} (HTTPS), for using HTTP communication over
+SSL/TLS for secure communication with web servers (using default port 443 instead
+of the HTTP default port 80):
+\begin{quote}\begin{code}\begin{verbatim}
+		URL pageURL = new URL("https:...");
+		HttpsURLConnection conn
+		= (HttpsURLConnection)pageURL.openConnection();
+		InputStream is = pageURL.openStream();
+		\end{verbatim}\end{code}\end{quote}
+The class \begin{code}HTTPSExample\end{code} is a simple example of
+establishing an HTTPS connection.
+Note that besides setting system properties for the truststore
+it must also set system proxy properties if it accesses a web server from behind a firewall
+(discussed in Section \ref{Se:Firewalls}).
+
+\begin{exercise}[HTTPS With Generic Connection Framework]
+	Use the Java Micro Edition class \begin{code}Connector\end{code} to open an
+	\begin{code}HttpsConnection\end{code} to a web server and obtain details of
+	the server certificate.
+\end{exercise}
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that represents a client that repeatedly sends any keyboard
+   input securely to an SSLEchoServer until the user enters DONE
+   @see SSLEchoServer.java
+*/
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Scanner; // Java 1.5 equivalent of cs1.Keyboard
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+public class SSLEchoClient
+{
+   public static final String HOST_NAME = "localhost";
+   public static final int HOST_PORT = 8890; // host port number
+   public static final String DONE = "done"; // terminates echo
+   ...
+
+   public void startClient()
+   {  Scanner keyboardInput = new Scanner(System.in);
+      System.setProperty("javax.net.ssl.trustStore",
+         "jssetruststore.jks");
+      System.setProperty("javax.net.ssl.trustStorePassword",
+         "changeit");
+      SSLSocketFactory sslFactory
+         = (SSLSocketFactory)SSLSocketFactory.getDefault();
+      SSLSocket socket = null;
+      try
+      {  socket
+            = (SSLSocket)sslFactory.createSocket(HOST_NAME,HOST_PORT);
+         System.out.println("Starting handshake");
+         socket.startHandshake(); //optional,happens anyway when flush
+      }
+      catch (IOException e)
+      {  System.err.println("Client could not make connection: " + e);
+         System.exit(-1);
+      }
+      PrintWriter pw = null; // output stream to server
+      BufferedReader br = null; // input stream from server
+      ...
+   }
+
+   public static void main(String[] args)
+   {  SSLEchoClient client = new SSLEchoClient();
+      client.startClient();
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that represents a server that continually echos any SSL/TLS
+   TCP message securely back to the client until it receives DONE
+   @author Andrew Ensor
+*/
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+
+public class SSLEchoServer
+{
+   private boolean stopRequested;
+   public static final int PORT = 8890; // some unused port number
+   public static final String DONE = "done"; // terminates echo
+
+   public SSLEchoServer()
+   {  stopRequested = false;
+   }
+
+   // start the server if not already started and repeatedly listen
+   // for client connections until stop requested
+   public void startServer()
+   {  stopRequested = false;
+      System.setProperty("javax.net.ssl.keyStore", "jssekeystore.jks");
+      System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
+      SSLServerSocketFactory sslServerFactory
+         =(SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+      SSLServerSocket serverSocket = null;
+      try
+      {  serverSocket = (SSLServerSocket)
+            sslServerFactory.createServerSocket(PORT);
+         serverSocket.setSoTimeout(2000); // timeout for accept
+         System.out.println("Server started at "
+            + InetAddress.getLocalHost() + " on port " + PORT);
+      }
+      catch (IOException e)
+      {  System.err.println("Server can't listen on port: " + e);
+         System.exit(-1);
+      }
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+
+\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+      while (!stopRequested)
+      {  // block until the next client requests a connection
+         // or else the server socket timeout is reached
+         try
+         {  SSLSocket socket = (SSLSocket)serverSocket.accept();
+            System.out.println("Secure connection made with "
+               + socket.getInetAddress());
+            // start an echo with this connection
+            EchoConnection echo = new EchoConnection(socket);
+            Thread thread = new Thread(echo);
+            thread.start();
+         }
+         catch (SocketTimeoutException e)
+         {  // ignore and try again
+         }
+         catch (IOException e)
+         {  System.err.println("Can't accept client connection: " + e);
+            stopRequested = true;
+         }
+      }
+      try
+      {  serverSocket.close();
+      }
+      catch (IOException e)
+      {  // ignore
+      }
+      System.out.println("Server finishing");
+   }
+
+   // stops server AFTER the next client connection has been made
+   // or timeout is reached
+   public void requestStop()
+   {  stopRequested = true;
+   }
+
+   // driver main method to test the class
+   // note that it doesn't call requestStop so main does not exit
+   public static void main(String[] args)
+   {  SSLEchoServer server = new SSLEchoServer();
+      server.startServer();
+   }
+
+   // inner class that represents a single echo connection
+   private class EchoConnection implements Runnable
+   {
+      ...
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+\begin{figure*}\begin{program}\begin{verbatim}
+/**
+   A class that demonstrates how to open an HTTPS connection to a
+   web server and obtain the response
+   @author Andrew Ensor
+*/
+...
+public class HTTPSExample
+{
+   public static void main(String[] args)
+   {  // use the cacerts keystore included with Java Runtime
+      Scanner keyboardInput = new Scanner(System.in);
+      System.setProperty("javax.net.ssl.trustStore",
+         "c:/j2sdk/jre/lib/security/cacerts");
+      System.setProperty("javax.net.ssl.trustStorePassword",
+         "changeit");
+      // set the proxy host and port number for AUT's firewall
+      // note this is not needed if no firewall present
+      System.setProperty("https.proxySet","true");//true if using proxy
+      System.setProperty("https.proxyHost", "cache.aut.ac.nz"); // AUT
+      System.setProperty("https.proxyPort", "3128"); // AUT specific
+      // obtain the URL for https
+      String urlName = null;
+      ...
+      try
+      {  URL pageURL = new URL(urlName);
+         // set connection and read timeouts for the connection
+         HttpsURLConnection conn
+            = (HttpsURLConnection)pageURL.openConnection();
+         conn.setConnectTimeout(5000); // 5000ms
+         conn.setReadTimeout(5000); // 5000ms
+         // create an input stream and read all the lines
+         InputStream is = pageURL.openStream();
+         BufferedReader br = new BufferedReader
+            (new InputStreamReader(is));
+         String line = br.readLine();
+         while (line != null)
+         {  System.out.println("Received: " + line);
+            line = br.readLine();
+         }
+         br.close();
+      }
+      catch (MalformedURLException e) // not valid protocol
+      {  System.err.println("Invalid protocol or URL: " + e);
+      }
+      catch (IOException e)
+      {  System.err.println("IO Exception: " + e);
+      }
+   }
+}
+\end{verbatim}\end{program}\end{figure*}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% XML Web Service Security                                                          %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\input{XML}
+%
+%
+%
+% <END networksecurity>

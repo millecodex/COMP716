@@ -21,20 +21,36 @@
 % >>pdflatex -shell-escape HSSManual.tex
 % see: https://tex.stackexchange.com/questions/8413/how-to-use-pstricks-in-pdflatex
 %
-\documentclass[a4paper]{book}
-\usepackage{pstricks}
+% Print copy for students is double-side (book) without link highlighting
+% i.e: \documentclass[a4paper,10pt,twoside]{book}
+% PDF copy for download is single-sided with active coloured URLs
+% i.e: \documentclass[a4paper,10pt,oneside]{book}
+\documentclass[a4paper,oneside]{book}
+\usepackage{pstricks,pst-coil,pst-plot,pst-grad,pst-node,pst-text}
 \usepackage{auto-pst-pdf}
-\usepackage{amssymb,graphicx,pst-coil,pst-plot,pst-grad,pst-node,pst-text,%
-  ifthen,clrscode}
+\usepackage{tikz}
+\usepackage{amssymb,amsmath,graphicx,xcolor,ifthen,clrscode}
 \usepackage{multicol,parskip,booktabs}
-\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
 
+% for one-sided printing
+\usepackage[inner=3.27cm,outer=3.27cm,bottom=2.54cm,top=2.54cm]{geometry}
+% for two-sided printing
+%\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
+%\usepackage[hidelinks]{hyperref} makes all links black for printing
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks,
+	linkcolor={blue!50!black},
+	citecolor={blue!50!black},
+	urlcolor={blue!50!black}
+}
+\graphicspath{{./graphics/}} %
 \begin{document}
 \setlength{\parskip}{1.5mm}
   \newcommand{\url}[1]{\texttt{#1}\/}
   \newcommand{\type}[1]{\texttt{#1}\/}
   \newcommand{\bsl}{\ensuremath{\backslash}}
-  \newcommand{\tag}[1]{\type{<#1>}}
+%  \newcommand{\tag}[1]{\type{<#1>}}
   \newcommand{\suggestbreak}{\linebreak[0]}
   \newcommand{\reading}[1]{\textbf{Reading: {#1}}}
   \newcommand{\defn}[1]{\textit{#1}}
@@ -104,18 +120,19 @@
  
  This project is on GitHub, find it \\
  and download the source files at: \\
- https://github.com/millecodex/COMP716 \\                            
+ \url{https://github.com/millecodex/COMP716} \\                            
                                                                       
  Licenced under MIT General License (c) 2018 \\     
  
  Version 3.0 by Jeff Nijsse, 2018.\\
- $<$\texttt{jeff.nijsse@aut.ac.nz}$>$\\
+\href{mailto:Jeff.Nijsse@aut.ac.nz}{\texttt{Jeff.Nijsse@aut.ac.nz}}\\
  Version 2.0 by Seth Hall, 2015.\\
  Version 1.0 by Andrew Ensor, 2006.
  
  
     %\include{CourseInformation}
     %\include{Timetable}
+    \hypersetup{linkcolor={black}}
     \tableofcontents
 
   \mainmatter
@@ -124,8 +141,17 @@
 %    \include{Authentication}
 %    \include{NetworkSecurity}
 %    \include{SystemSecurity}
+	\include{Blockchain}
 
   \appendix
-%    \include{ApacheTomcatServer}
 
 \end{document}
+%
+%
+%
+%
+%
+%
+% //end main
+% Have a good day :-)
+% -Jeff

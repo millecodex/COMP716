@@ -22,7 +22,7 @@ The blockchain must be created one block at a time and mass deletion or appendin
  
 Recall that a hash function takes a variable length input and produces a fixed length output with no discernible pattern. A good hash function is one-way which means that it is easy to calculate (verify) but difficult to reverse. Given a hash it should be computationally infeasible to both produce the data that created the hash, and to find a message that produces the same hash. This scenario is called a collision and for the blockchain to be secure it should be composed using a collision-resistant hash function.
 
-If an adversary wishes to modify data in a block -- such as financial transaction data -- the resulting hash pointer will have changed and need to be updated. (Even a variation of a single bit yields a different hash.) So rather than having to store the entire data set for verification, we can store the hash pointers and easily see if they are correct. Our adversary that altered some data would have to change every subsequent hash pointer to the tip of the blockchain. Simply storing the most recent hash in a place that can't be modified is enough to verify the whole chain. This can be done by keeping multiple copies in different locations. 
+If an adversary wishes to modify data in a block -- such as financial transaction data -- the resulting hash pointer will need to be updated. (Even a variation of a single bit yields a different hash.) So rather than having to store the entire data set for verification, we can store the hash pointers and easily see if they are correct. Our adversary that altered some data would have to change every subsequent hash pointer to the tip of the blockchain. Simply storing the most recent hash in a place that can't be modified is enough to verify the whole chain. This can be done by keeping multiple copies in different locations. 
 
 \begin{center}
 	\includegraphics[width=0.5\textwidth]{merkle}
@@ -56,12 +56,13 @@ A cryptographically secure financial transaction system should embody the follow
 	\item [Distributed Network] The network should be invulnerable to attack or regulatory control from a single entity.
 	\item [Security] Ownership of addresses (coins) and the ledger should be computationally secure and  hackers or bad actors should not be able to modify the historical record.
 \end{description}
+
 \subsection*{A Brief History: Before Bitcoin}
 In 1983 David Chaum came up with a scheme for electronic cash involving distribution, tracking, and spending of coins that relied on a bank entity for clearing. Chaum's idea was to use what are called \defn{blind signatures} to keep the identity of the user hidden from the central clearing house, while still being able to trust that the hidden user had viable funds to spend. If the bank issues a new digital note to you and lets \textit{you} pick the serial number and then the bank signs it, there is now a new note in existence guaranteed by the bank but they don't know who they gave it to. If you tried to spend your new digital note twice the bank could step in and compare the transactions and call you out on the double-spend attempt.
 
 Chaum started DigiCash in 1989 to allow users to conduct anonymous online transactions. DigiCash and others in the intervening years relied on banks for the issuance of new currency, and although had unique privacy features, banks largely did not need the new technology and did not adopt it. Much of the work since this time has involved trying to remove the bank from the equation to create a decentralized currency.  
 
-Another issue to consider is the minting of the digital coins. A good solution requires a cost structure similar to the printing of modern notes where capital expenditure is large to acquire printing presses and develop the security features. This cost goes down over time as subsequent print runs cost less and less making it difficult for a user to print their own money. For digital minting, the computational power required to copy a digital serial number is negligent and so a more intensive process is required.
+Another issue to consider is the minting of the digital coins. A good solution requires a cost structure similar to the printing of modern notes where capital expenditure is large to acquire printing presses and develop the security features. This cost goes down over time as subsequent print runs cost less and less making it difficult for single users to print their own money. For digital minting, the computational power required to copy a digital serial number is negligent and so a more intensive process is required.
 
 In 1997 original cypherpunk Adam Back came up with \defn{Hashcash}. Hashcash was developed to solve the problem of email spam. DDoS attacks on email servers can be mitigated by hashing a proof of computational effort and including it in the email header. Spammers and phishers must send thousands of emails to get a response and so a small delay in each mail sent can be very frustrating. The delay is negligible for the average user as their own processor could compute the proof-of-work during composing their message and not notice the cpu time required. The work that the cpu is doing is finding a solution to a hash puzzle. A variant of Hashcash is used in bitcoin and offers a solution to the coin minting problem. Section \ref{Se:POW} discusses proof-of-work.
 
@@ -73,13 +74,12 @@ In 1997 original cypherpunk Adam Back came up with \defn{Hashcash}. Hashcash was
 %%%%% Bitcoin                                                                       %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Bitcoin}\label{Se:bitcoin}
-
-In 2008 a whitepaper emerged by Satoshi Nakamoto that combined many of the elements we have studied thus far and solved the double-spend problem in a distributed system. The new feature in bitcoin is called \defn{emergent consensus} and allows a network of independent users and operators to monitor transactions against a global ledger. Every node independently verifies transactions and the network globally agrees on new blocks to be appended to the blockchain. This agreement of the blockchain state by its users is the last piece in the digital cash puzzle thereby eliminating the need for a trusted intermediary. Bitcoin tied together the following modules to create a distributed, cryptographically secure financial system:
+In 2008 a whitepaper emerged by Satoshi Nakamoto that combined many of the elements we have studied thus far and solved the double-spend problem in a distributed system. The new feature in bitcoin is called \defn{emergent consensus}\footnote{The term Nakamoto consensus is gaining popularity in the literature.} and allows a network of independent users and operators to monitor transactions against a global ledger. Every node independently verifies transactions and the network globally agrees on new blocks to be appended to the blockchain. This agreement of the blockchain state by its users is the last piece in the digital cash puzzle thereby eliminating the need for a trusted intermediary. Bitcoin tied together the following modules to create a distributed, cryptographically secure financial system:
 
 \begin{description}
 	\item [Decentralization] Bitcoin software is open-source so anyone can run the software and set up a node in the network. There has been considerable growth since 2009; estimates indicate there are around 10,000 full nodes online. Each node contains a copy of the blockchain and can independently validate transactions. This eliminates single-point-of-failure problems common in centralized systems.
 	\item[Consensus] All participants must agree on the state of the ledger. It is this trust in the ledger that allows one party to interact with another that they did not previously know or trust personally. Sometimes this is referred to as \defn{trustless}.
-	\item [Uniqueness] Every transaction has a hash pointer within a block. In this sense all the transactions are unique. Individual coins do not actually exist, rather hash pointers can indicate unspent transaction outputs that can show \begin{code}9.87654321 bitcoin\end{code}\footnote{A bitcoin is divisible into 8 decimal places; 0.000 000 01 is called a satoshi.} for example. Whoever has the private key to these unspent outputs is considered the owner.
+	\item [Uniqueness] Every transaction has a hash pointer within a block. In this sense all the transactions are unique. Individual coins do not actually exist, rather hash pointers can indicate unspent transaction outputs that can show \begin{code}9.87654321 bitcoin\end{code}\footnote{A bitcoin is divisible into 8 decimal places; 0.000 000 01 is called a satoshi.}, for example. Whoever has the private key to these unspent outputs is considered the owner.
 	\item [Supply Stability] Every block that is added to the chain results in the minting of new bitcoins. This amount is halved about every four years so the total supply is a decreasing geometric series. The maximum number of bitcoins that will be minted is just under 21 million.
 	\item [Security] Bitcoin uses the NIST specification \begin{code}secp256k1\end{code} elliptic curve digital signature algorithm. This keeps users private keys secure and authenticates transactions in the network.
  
@@ -117,7 +117,7 @@ Imagine three generals of the same army, all wanting to attack an enemy fortress
 \end{center}
 A decentralized blockchain application has many nodes in the network and each of them has a copy of the blockchain. If Bob wants to send Alice his tokens, the nodes in the network must first agree that Bob has available tokens to spend, and then update the state before Bob can double-spend his tokens. The network needs to be in a state of \defn{consensus} for people to trust it. Consensus in the Byzantine Generals problem has been proven to be impossible if more than a third of the nodes are malicious.\footnote{The term Byzantine in computer science indicates an unpredictable actor--this includes malicious activity.}
 
-Bitcoin does not exactly mirror the model of the Byzantine Generals and so is not impossible to reach consensus. In other words, bitcoin does achieve consensus despite Byzantine behaviour. More practically, bitcoin achieves a state of \textit{emergent} consensus. This means that over time as blocks get added to the chain, a general state emerges that everyone agrees on. So how does this occur without clear rules? A closer look at the double-spend attack will illustrate how nodes come to agreement
+Bitcoin does not exactly mirror the model of the Byzantine Generals and so is not impossible to reach consensus. In other words, bitcoin does achieve consensus despite Byzantine behaviour. More practically, bitcoin achieves a state of \textit{emergent} consensus. This means that over time as blocks get added to the chain, a general state emerges that everyone agrees on. So how does this occur without clear rules? A closer look at the double-spend attack will illustrate how nodes come to agreement.
 
 \subsubsection*{The Double-Spend Attack}
 A dodgy actor, Eve, could manipulate the blockchain by sending some coins to Jeff and receiving a good or service. Then she could send those same coins to Bob's address whom she also controls. If the transaction involving Bob's address is validated on the blockchain, then Eve would have successfully double-spent the same coins. She now has the coins in Bob's address and the goods from the transaction with Jeff.\\
@@ -141,7 +141,7 @@ Referring back to the state diagram, who gets to propose these blocks and earn t
 A miner is a network participant that contributes their computing power in a demonstrable way. A fair way to allocate the incentives would be by some resource that can not be gamed or monopolized. One such way is by computing power, and is called \defn{proof-of-work}. Another method is by value held in reserve and is called proof-of-stake. Proofing methods is a very active research topic as it has many game theoretic variables.\footnote{Other methods include DPoS: delegated proof-of-stake, PoET: proof of elapsed time, and PoA: proof of authority.} Bitcoin miners participate by using their computing power to validate transactions and suggest new blocks. For this effort they receive rewards in proportion of their contribution to the network as a whole. Bitcoin uses a \begin{code}SHA256\end{code} hashing algorithm as the hash puzzle that miners have to find a solution for.
 \begin{center}
 \begin{code}
-	Block=Hash(nonce||previousHash||data||data||...||data) < target
+	Block = Hash(nonce||previousHash||data||data||...||data) < target
 \end{code}
 \end{center}
 
@@ -151,9 +151,9 @@ A miner is a network participant that contributes their computing power in a dem
 was the successful hash of block \begin{code}529283\end{code}. The only way to find a hash with a smaller value than the target is to change a nonce value and re-hash the bundle of transactions over and over. When a target is hit, the block is broadcast to the network as a proof of computational work done in solving the hash puzzle. 
 The bits here should be randomly distributed, like a lottery, to prevent gaming the system and earning more rewards than your proportion\footnote{As the bitcoin network has matured, dedicated hardware called ASICs (application specific integrated circuits) to solve the \begin{code}SHA256\end{code} algorithm have dominated. It is no longer feasible for a single participant to mine bitcoin without dedicated hardware.}. Computing cycles in the bitcoin network is called \defn{hashpower} in reference to \begin{code}SHA256\end{code}. As more miners come online, the total hashpower increases leading to greater overall probability of successfully hashing a value below the target. To keep the temporal distribution of blocks even, this target difficulty automatically adjusts according to the protocol every 2016 blocks, or approximately two weeks.
 
-Below is a log plot of the mining difficulty from 2009-2018 showing that the difficulty has increased exponentially since. The slope roughly correlates to the growth of the network.\footnote{Source: \url{https://www.blockchain.com/charts/difficulty}}
+Below is a log plot of the mining difficulty from 2009-2018 showing that the difficulty has increased exponentially. The slope roughly correlates to the growth of the network.\footnote{Source: \url{https://www.blockchain.com/charts/difficulty}}
 
-\begin{center}
+\begin{center}\vspace{0.3cm}
 	\includegraphics[width=1.0\textwidth]{difficulty}
 	% source https://www.blockchain.com/charts/difficulty
 \end{center}
@@ -198,30 +198,51 @@ So can someone steal my coins? Not by hacking. Elliptical curve cryptography kee
 It is imperative that users keep their private keys secret as in any other cryptosystem. There are some added enhancements for encrypting passwords and wallets but these are third party additions and not built in to the protocol.
 
 \subsubsection*{Key Storage}
-
 Storage of cryptocurrency is similar to storage of your online banking details. There are no actual bitcoins to keep safe; there is no \begin{code}<bitcoin object>\end{code} to keep password protected. Remember the blockchain is an open ledger of every transaction in the network. Just like your online banking system keeps track of all account balances and doesn't actually store any fiat\footnote{Fiat is government issued money. New Zealand dollars and Japanese yen are both considered fiat currency.}. Bitcoin is cryptographically secured, and if you have the private keys to an address, then you control the funds that address references in the blockchain. 
 
 A bitcoin address is the public key of a public-private key pair generated by a 256 bit elliptic curve function. The public key is encoded in base-58 to reduce errors in transcription by removing similar characters: \begin{code}0O1l\end{code}.
 \begin{center}
 	\includegraphics[width=0.65\textwidth]{keysQR}\end{center}
 % source bitcoin presentation
-Cryptocurrencies are more risky than traditional online banking because if you lose your private keys they are not recoverable. There is no password reset, or government issue ID verification to recover your details. 
+Cryptocurrencies are more risky than traditional online banking because if you lose your private keys they are not recoverable. There is no password reset, or government issue ID verification to recover your account. 
 
 There are a number of way to store your keys:
 \begin{description}
-	\item[Hot Wallet] This is the most common. A software application that keeps your private keys so you can sign transactions, keeps track of your tokens, and maybe offers some additional functionality like multiple addresses, or multiple token support. The risk here is that if you lose your device, your private keys are gone with it. Day-to-day transactions using a smartphone would be done through a hot wallet.
+	\item[Hot Wallet] This is the most common. A software application that stores your private keys so you can sign transactions, keeps track of your tokens, and maybe offers some additional functionality like multiple addresses, or multiple token support. The risk here is that if you lose your device, your private keys are gone with it. Day-to-day transactions using a smartphone would be done through a hot wallet.
 	\item[Cold Storage] For larger amounts, savings, investments, and custodial services, a cold wallet is recommended. This is a device that is not powered and has no connectivity and stores your private keys internally. When tokens are required, it can be plugged into a USB and connected to the network. 
 	\item[Paper Wallet] Once a key pair has been generated and used to receive tokens, that private key will always have ownership of the tokens. The private key can be printed out or written down, sometimes as a QR code for easy scanning. After the memory has been cleared there is no more digital record of the private keys.
 	\item[Brain Wallet] The most hard-core of storage systems is to remember your private keys and destroy all physical and digital evidence of them. Certain memory mnemonics can help with this. 
 \end{description}	
-Note that for all these methods including memorization, its possible to \textit{send} tokens to your address without connecting the keys to the network. This transaction will be recorded by all the nodes running the blockchain and propagated accordingly. Private keys are only required to sign transactions (spend tokens).
-
-All of these methods are vulnerable to crisis such as fire or theft, and represent a single point of failure. Backing up your keys can solve the crisis issues, but someone could still steal the backup. 
+Note that for all these methods including memorization, its possible to \textit{send} tokens to your address without connecting the keys to the network. This transaction will be recorded by all the nodes running the blockchain and propagated accordingly. Private keys are only required to sign transactions (spend tokens). All of these methods are vulnerable to crisis such as fire or theft, and represent a single point of failure. Backing up your keys can solve the crisis issues, but someone could still steal the backup. 
 
 \subsubsection*{Secret Sharing}
 Lets assume that eventually someone \textit{will} steal our private keys. In this scenario they need the entire key, in the correct order to use it. So why not split the key in two or several parts? This is known as \defn{secret sharing} and works like this: split the key into $N$ shares such that any $K$ of those shares can reconstruct the key, but with $<K$ shares nothing can be learned. Lets split the secret $S$  into 2 shares so that $N=2$ and $K=2$. If $S$ is a 128 bit number, a random 128 bit number $R$ is generated and the 2 shares can be $R$ and $S\oplus R$ (bitwise XOR). Either share alone does not help because $R$ is random, and $S\oplus R$ depends on knowing $R$. In essence the secret has been encrypted with a one-time pad cipher where $R$ is the key. This works for $N=K$. What about for $N>K$?
 
-Say you split the secret in to four shares, give one to each of your trustworthy relatives, and at any time two of them are required to reconstruct the secret. This can be accomplished with some linear algebra. Any two points can construct a line, but given a third random point it is unlikely to be collinear with the first two. To generate $N$ shares, prepare a line with $N$ points. Now any two of these points can reconstruct the line, and intercept the axis ($S$), but any single point is useless because the slope is unknown.
+Say you split the secret in to four shares, give one to each of your trustworthy relatives, and at any time two of them are required to reconstruct the secret. This can be accomplished with some linear algebra. Any two points can construct a line, but given a third random point it is unlikely to be collinear with the first two. To generate $N$ shares, prepare a line with $N$ points. Now any two of these points can reconstruct the line, and determine the $x-$intercept ($S$), but any single point is useless because the slope is unknown. 
+
+\begin{center}
+	\begin{tikzpicture}
+	\pgfplotsset{ticks=none}
+	\begin{axis}
+	[grid=none,
+	scale=1,
+	xmin=0, xmax=5,
+	ymin=0, ymax=2.5,
+	axis lines=middle,
+	axis line style={->},
+	xlabel=$x$,
+	ylabel=$y$,
+	]
+	\addplot[->,domain=0:5,samples=50,smooth,thick,black] {0.25*x+1};
+	\addplot[mark=*, nodes near coords={$(0,S)$},every node near coord/.style={anchor=160}] coordinates {(0,1)};
+	\addplot[mark=*, nodes near coords={$(1,S+R)$},every node near coord/.style={anchor=160}] coordinates {(1,1.25)};
+	\addplot[mark=*, nodes near coords={$(2,S+2R)$},every node near coord/.style={anchor=160}] coordinates {(2,1.5)};
+	\addplot[mark=*, nodes near coords={$(3,S+3R)$},every node near coord/.style={anchor=160}] coordinates {(3,1.75)};
+	\end{axis}
+	\end{tikzpicture}
+\end{center}
+
+The point $(0,S)$ represents the secret, a large random number less than a large prime, $P$. The shares are linear combinations modulo $P$, up to $N$, where any 2 of them will recover the secret.
 \begin{align*}
 x=0,\quad y&=S\\
 x=1,\quad y&=(S+R)\mod P\\
@@ -240,7 +261,7 @@ What if you require more than 2 shares necessary to reconstruct the key? If we i
 \section{Privacy}\label{Se:Privacy}
 Identity in a decentralized system is based on private keys. Whoever has access to a private key can operate within the network and this activity is directly linked to the key. Just like how digital signatures provide non-repudiation, the activity of an address within an open ledger can be thought of as someone's identity. Keeping with this idea of keys as identities, multiple keys could be multiple identities. You could generate a new identity with a new random key pair and never use the old identity again. 
 
-There is a problem here if you want to remain anonymous. Anonymity means that you can still participate in the network but it is difficult or impossible to link your activity with your real identity. Even if one user has multiple addresses, the activities of those addresses is stored in the open--every node in the network has a copy. For this reason, bitcoin is considered to be \defn{pseudonymous}. The activity of one address can be tracked, and this can be mapped to behaviour, possibly providing compelling evidence to link the two. Privacy in cryptocurrencies is a contentious issue and often cited as a founding principle. It goes right back to the core tenet of cryptography -- communicating in secret. For a user of cryptocurrency this may be as innocent as purchasing a VPN to use the internet where content and websites may be censored, or much more nefarious purposes.\footnote{For many years bitcoin was synonymous with the \defn{Silk Road}, an online marketplace that remained out of reach of authorities and sold illegal goods. The possibility to purchase illegal material is still a main point of debate against cryptocurrencies. Many people have studied anonymity in markets and cash is still the best way to transact without revealing your identity.}
+There is a problem here if you want to remain anonymous. Anonymity means that you can still participate in the network but it is difficult or impossible to link your activity with your real identity. Even if one user has multiple addresses, the activities of those addresses is stored in the open -- every node in the network has a copy. For this reason, bitcoin is considered to be \defn{pseudonymous}. The activity of one address can be tracked, and this can be mapped to behaviour, possibly providing compelling evidence to link the two. Privacy in cryptocurrencies is a contentious issue and often cited as a founding principle. It goes right back to the core tenet of cryptography -- communicating in secret. For a user of cryptocurrency this may be as innocent as purchasing a VPN to use the internet where content and websites may be censored, or for much more nefarious purposes.\footnote{For many years bitcoin was synonymous with the \defn{Silk Road}, an online marketplace that remained out of reach of authorities and sold illegal goods. The possibility to purchase illegal material is still a main point of debate against cryptocurrencies. Many people have studied anonymity in markets and cash is still the best way to transact without revealing your identity.}
 
 Coin mixing or laundry services aggregate transactions together and wash by sending a large transaction to one or many addresses controlled by the service. Funds are then returned less a service fee. This will help to obfuscate origin and destination of funds from forensic analysis but requires a large amount of trust in the mixing service. This is a weak and impractical solution to transaction anonymity. 
 

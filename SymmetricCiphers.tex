@@ -89,7 +89,7 @@ known to contains a particular sequence repeated (such as
 \begin{code}"the"\end{code}), or worse still if a cryptanalyst has
 access to a sample of both plaintext and its corresponding
 ciphertext, the code can be easily broken.
-\begin{figure*}[htb]
+\begin{figure*}[htb]\begin{center}
 \begin{tabular}{|c|r|c|r|c|r|} \hline
   \multicolumn{6}{|l|}{\textit{Relative Frequency of Letters in English Text}} \\ \hline\hline
   \textit{Letter} & \textit{Frequency} & \textit{Letter} & \textit{Frequency}
@@ -120,7 +120,7 @@ ciphertext, the code can be easily broken.
   x & 0.150\% \\
   y & 1.974\% &
   z & 0.074\% & & \\ \hline
-\end{tabular}
+\end{tabular}\end{center}
 \end{figure*}
 
 One attempt to improve on the monoalphabetic substitution cipher is to assign
@@ -130,7 +130,7 @@ However, this is still susceptible to a frequency analysis since certain combina
 of pairs of letters, called \defn{bigrams}, occur more frequently than others.
 Given a suitably large ciphertext the code could still be successfully broken using
 a frequency analysis of bigrams.
-\begin{figure*}[htb]
+\begin{figure*}[htb]\begin{center}
 \begin{tabular}{|c|r|c|r|c|r|} \hline
   \multicolumn{6}{|l|}{\textit{Relative Frequency of Bigrams in English Text}} \\ \hline\hline
   \textit{Bigram} & \textit{Frequency} & \textit{Bigram} & \textit{Frequency}
@@ -144,7 +144,7 @@ a frequency analysis of bigrams.
   nd & 1.572\% &
   on & 1.418\% &
   en & 1.383\% \\ \hline
-\end{tabular}
+\end{tabular}\end{center}
 \end{figure*}
 
 A \defn{Hill cipher} encrypts blocks of $m$ elements at a time using an
@@ -413,17 +413,15 @@ the S-box $S_1$, whereas if it is in the second group it is replaced
 with $1111$ from the S-box $S_2$.
 Finally, these 32 bits are passed through a permutation $P$
 to give $F\left(R_{i-1},K_i\right)$.
-\setlength{\columnsep}{1cm}
 
-\begin{multicols}{2}
-\noindent Although the eight S-boxes are well-known they have been a source of contention
+Although the eight S-boxes are well-known they have been a source of contention
 amongst cryptographers as their original design criteria were kept confidential.
 Hence suspicions arose as to whether they were designed with a weakness so that the
 US National Security Agency could decipher messages without knowledge of the key.
 Also of concern was the length of the key, only 56 bits, instead of the
 original IBM proposal of using a more-secure 128-bit key. Although this still allows $2^{56}\approx7\times10^{16}$ possible keys, by 1998 DES-cracker devices were available that could break DES ciphertext via brute-force in less than three days, and by 2012 the keyspace could be exhausted in 26 hours with custom-built hardware. \\
-
-\begin{pspicture}[shift=*](0.5,-0.75)(5.5,5)
+\begin{center}
+\begin{pspicture}(0.5,-0.75)(5.5,5)
   \psline(0.5,0)(0.5,4.75)(4.5,4.75)(4.5,0)(0.5,0)
 
   \rput(2.5,5.5){\rnode{Fin}{$R_{i-1}$}}
@@ -462,8 +460,7 @@ original IBM proposal of using a more-secure 128-bit key. Although this still al
   \pnode(2.5,0.5){Pout}
   \rput(2.5,-0.75){\rnode{Fout}{$F\!\left(R_{i-1},K_i\right)$}}
   \ncline[arrows=->]{Pout}{Fout}\naput[npos=0.2]{\scriptsize{32 bit}}
-\end{pspicture}
-\end{multicols}
+\end{pspicture}\end{center}
 
 As DES is a symmetric cipher the same key is used to decrypt ciphertext
 as well as encrypt plaintext. Decryption is achieved by simply reversing
@@ -666,10 +663,9 @@ byte[] output = cipher.doFinal(input);
 For example, the simple class \begin{code}DESExample\end{code} demonstrates
 how DES encryption can be achieved using the JCA API.
 
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=DES encryption with Java Cryptography Architecture]
 /**
-   A simple class that demonstrates how DES encryption is achieved
-   using the Java Cryptography Architecture
+   A simple class that demonstrates how DES encryption is achieved using the Java Cryptography Architecture
    @author Andrew Ensor
 */
 ...
@@ -718,7 +714,7 @@ public class DESExample
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 \begin{exercise}[Comparing ECB and CBC modes]
 Use DES in ECB mode and then instead in CBC mode to encrypt the bytes in an image
@@ -1120,6 +1116,7 @@ to give the S-box substitution byte:
     1\\1\\0\\0\\0\\1\\1\\0
   \end{array}\right).
 \end{scriptsize}\end{displaymath}
+
 \begin{figure*}\begin{center}
 \begin{pspicture}(-3.75,-1)(4.25,13.5)
   \rput(2,13){\rnode{AESin}{\scriptsize$\left(\!\!\begin{array}{cccc}
@@ -1178,9 +1175,10 @@ to give the S-box substitution byte:
     \end{array}\!\!\right)$}}
   \ncline[arrows=->]{X10}{AESout}\naput{\scriptsize{128 bit}}
 
-  \rput(2,-0.5){AES Encryption Algorithm}
+  \rput(2,-0.5){AES Encryption Algorithm (above)}
 \end{pspicture}
 \end{center}\end{figure*}
+
 The AES S-box gives an invertible permutation of the bytes designed to be
 resistant to currently known cryptanalysis attacks and optimized to
 ensure a low correlation between each byte and its substituted byte.
@@ -1326,10 +1324,9 @@ method \begin{code}getIV\end{code}. If however it is being initialized for
 decryption then it will throw an \begin{code}InvalidKeyException\end{code}
 if an initialization vector is required but not specified.
 
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=AES encryption with CBC mode]
 /**
-   A simple class that demonstrates how AES encryption with CBC mode
-   is achieved using the Java Cryptography Architecture
+   A simple class that demonstrates how AES encryption with CBC mode is achieved using the Java Cryptography Architecture
    @author Andrew Ensor
 */
 ...
@@ -1379,7 +1376,7 @@ public class AESExample
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 
 \begin{exercise}[Performance of DES and AES]
@@ -1597,10 +1594,9 @@ via a \begin{code}KeyGenerator\end{code}. Note however that
 secret information such as the key should \underline{never} in practice
 be stored in a \begin{code}String\end{code} (as any \begin{code}String\end{code}
 is immutable its contents cannot be changed after use).
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=RC4 encryption]
 /**
-   A simple class that demonstrates how RC4 encryption is achieved
-   using the Java Cryptography Architecture
+   A simple class that demonstrates how RC4 encryption is achieved using the Java Cryptography Architecture
    @author Andrew Ensor
 */
 ...
@@ -1648,7 +1644,7 @@ public class RC4Example
       ...
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 The .NET platform provides implementations of some common
 cipher algorithms in the 
@@ -1677,7 +1673,7 @@ The key and initialization vector are held by the
 \begin{code}Key\end{code} and \begin{code}IV\end{code} properties of the cipher,
 and get stored in variables in the example so that they can be specified when
 the ciphertext is later decrypted.
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=AES encryption in C\#]
 /*
    A C# class that demonstrates how AES encryption is achieved in .NET
 */
@@ -1731,7 +1727,7 @@ public class NETExample
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 
 \begin{exercise}[Implementation of RC4]
@@ -1980,11 +1976,11 @@ in SMS messages,
 whereas the broadcast receiver \begin{code}SMSBroadcastReceiver\end{code}
 decodes a \begin{code}String\end{code} SMS message back to a \begin{code}byte[]\end{code}
 and decrypts it to retrieve the plaintext message contents.
-\begin{figure*}\begin{program}\begin{verbatim}
+
+
+\begin{lstlisting}[caption=SMS messaging encrypted with AES]
 /**
- * Android Activity that sends SMS messages which it has encrypted
- * using AES and Base64 encoded as a String
- * Note this example uses a hard-coded secret key for simplicity
+ * Android Activity that sends SMS messages which it has encrypted using AES and Base64 encoded as a String. Note this example uses a hard-coded secret key for simplicity
  * @author Andrew Ensor
  */
 package aut.hss;
@@ -1995,10 +1991,8 @@ public class AndroidAESDemoActivity extends Activity implements
    private Button sendButton;
    private SMSSentBroadcastReceiver sentBroadcastReceiver;
    private SMSDeliveredBroadcastReceiver deliveredBroadcastReceiver;
-   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9,
-      -21, -6, -15, -95, 117, 36, -89 }; // the secret key
-   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9,
-      -10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
+   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9, -21, -6, -15, -95, 117, 36, -89 }; // the secret key
+   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9,-10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
    private SecretKeySpec key;
    private IvParameterSpec initVector;
    private final String SMS_SENT_ACTION = "SMS_SENT";
@@ -2019,20 +2013,15 @@ public class AndroidAESDemoActivity extends Activity implements
    // implementation of OnClickListener method
    public void onClick(View view)
    {  if (view == sendButton)
-      {  TextView numberTextView
-            = (TextView)findViewById(R.id.number_text);
+      {  TextView numberTextView = (TextView)findViewById(R.id.number_text);
          String numberString = numberTextView.getText().toString();
-         TextView messageTextView
-            = (TextView)findViewById(R.id.message_text);
+         TextView messageTextView = (TextView)findViewById(R.id.message_text);
          String messageString = messageTextView.getText().toString();
          // send the sms message
          PendingIntent sentPendingIntent = PendingIntent.getBroadcast
             (this, 0, new Intent(SMS_SENT_ACTION), 0);
-         PendingIntent deliveredPendingIntent
-            = PendingIntent.getBroadcast(this, 0,
+         PendingIntent deliveredPendingIntent = PendingIntent.getBroadcast(this, 0,
             new Intent(SMS_DELIVERED_ACTION), 0);
-\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
-\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
          SmsManager smsManager = SmsManager.getDefault();
          String sendString = encryptAndEncodeString(messageString);
          if (sendString != null)
@@ -2063,28 +2052,19 @@ public class AndroidAESDemoActivity extends Activity implements
       return null;
    }
 }
-\end{verbatim}\end{program}\end{figure*}
-\begin{figure*}\begin{program}\begin{verbatim}
+\end{lstlisting}
+\begin{lstlisting}[caption=SMS Broadcast Receiver]
 /**
- * BroadcastReceiver that is notified when an SMS message is received
- * which it Base64 decodes and decrypts using AES with a hardcoded key
- * Note this BroadcastReceiver is statically registered in
- * AndroidManifest.xml and application requires permission
- * android.permission.RECEIVE_SMS
- * @see AndroidAESDemoActivity.java
+ * BroadcastReceiver that is notified when an SMS message is received which it Base64 decodes and decrypts using AES with a hardcoded key. Note this BroadcastReceiver is statically registered in AndroidManifest.xml and application requires permission android.permission.RECEIVE_SMS @see AndroidAESDemoActivity.java
  */
 package aut.hss;
 ...
 public class SMSBroadcastReceiver extends BroadcastReceiver
 {
-   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9,
-      -21, -6, -15, -95, 117, 36, -89 }; // the secret key
-   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9,
-      -10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
+   private byte[] keyBytes = { 51, 50, 7, -19, 120, 111, -110, 52, 9,-21, -6, -15, -95, 117, 36, -89 }; // the secret key
+   private byte[] ivBytes = { 1, -2, 3, -4, 5, -6, 7, -8, 9, -10, 11, -12, 13, -14, 15, -16 }; // random array of 16 bytes
    private SecretKeySpec key;
    private IvParameterSpec initVector;
-\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
-\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
    public SMSBroadcastReceiver()
    {  key = new SecretKeySpec(keyBytes, "AES");
       initVector = new IvParameterSpec(ivBytes);
@@ -2097,13 +2077,10 @@ public class SMSBroadcastReceiver extends BroadcastReceiver
       {  Object[] pdus = (Object[]) bundle.get("pdus");
          StringBuilder stringBuilder = new StringBuilder();
          for (int i = 0; i < pdus.length; i++)
-         {  SmsMessage message = SmsMessage.createFromPdu
-               ((byte[]) pdus[i]);
-            String senderAddress
-               = message.getDisplayOriginatingAddress();
+         {  SmsMessage message = SmsMessage.createFromPdu((byte[]) pdus[i]);
+            String senderAddress = message.getDisplayOriginatingAddress();
             String receivedString = message.getDisplayMessageBody();
-            String messageString = decodeAndDecryptString(context,
-               receivedString);
+            String messageString = decodeAndDecryptString(context, receivedString);
             stringBuilder.append("Received Encrypted SMS:\n");
             stringBuilder.append("  Sender: ").append(senderAddress);
             stringBuilder.append(" Message: ").append(messageString);
@@ -2137,8 +2114,7 @@ public class SMSBroadcastReceiver extends BroadcastReceiver
       ...
    }
 }
-\end{verbatim}\end{program}\end{figure*}
-
+\end{lstlisting}
 
 \begin{exercise}[AES Encryption on a Mobile]
 Enhance one of the AES mobile examples so that the sender and receiver of SMS messages

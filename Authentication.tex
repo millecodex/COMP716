@@ -395,8 +395,8 @@ In each iteration $64$ bits are extracted from the $1024$-bit block and passed
 as an \defn{input sequence} into an operation along with the $512$ bits of
 buffer values. After $80$ iterations each of the eight updated buffer values
 is added to its original value (modulo $2^{64}$) to produce a $512$-bit hash code.
-\begin{figure*}[htb]\begin{center}
-\begin{pspicture}(-3,0)(8.5,7.5)
+\begin{figure*}\begin{center}
+\begin{pspicture}(-3,0)(8.5,7.5)%
   \psline(0,0)(0,7.5)(5.8,5.75)(5.8,1.75)(0,0)
   \rput(3.5,0){SHA-512 compression function}
 
@@ -732,11 +732,9 @@ to perform the encoding and decoding between a \begin{code}byte[]\end{code}
 array and a \begin{code}String\end{code} of printable characters.
 These classes might not be supported in some Java virtual machines
 and so should not be used in a production environment.
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=Digital Signature Algorithm]
 /**
-   A class that demonstrates how DSA can be used to add a digital
-   signature to a text file, using line "SIGNATURE:" followed by base
-   64 encoding of signature, and verify if signature is still valid.
+   A class that demonstrates how DSA can be used to add a digital signature to a text file, using line "SIGNATURE:" followed by base 64 encoding of signature, and verify if signature is still valid.
    @author Andrew Ensor
 */
 ...
@@ -760,8 +758,7 @@ public class DSAFileSigner
       }
    }
 
-   // returns a Base64 encoded DSA signature for chars obtained from
-   // reader and then closes the reader stream
+   // returns a Base64 encoded DSA signature for chars obtained from reader and then closes the reader stream
    public String sign(Reader reader) throws IOException
    {  byte[] signature = null;
       BufferedReader br = new BufferedReader(reader);
@@ -785,10 +782,8 @@ public class DSAFileSigner
       }
       return (new BASE64Encoder()).encode(signature);
    }
-\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
-\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
-   // obtains the information from reader until the signature header
-   // is found, and then tries to verify the signature
+
+   // obtains the information from reader until the signature header is found, and then tries to verify the signature
    public boolean verify(Reader reader) throws IOException
    {
       BufferedReader br = new BufferedReader(reader);
@@ -835,7 +830,7 @@ public class DSAFileSigner
    }
    ...
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 \noindent
 \begin{minipage}{95mm}

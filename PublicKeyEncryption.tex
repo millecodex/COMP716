@@ -508,7 +508,7 @@ with the length of the key,
 resulting in a \begin{code}BadPaddingException\end{code} in \begin{code}RSADecrypter\end{code}.
 This small incompatibility can be avoided by not using keys of lengths
 exactly 512 or 1024 in the C\# version.
-\begin{figure*}\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=RSA encryption]
 /**
    A class that demonstrates how RSA encryption can be used to obtain
    RSA encrypted information from an RSAEncrypter server.
@@ -609,8 +609,8 @@ public class RSADecrypter
       decrypter.obtainBytes();
    }
 }
-\end{verbatim}\end{program}\end{figure*}
-\begin{figure*}\begin{program}\begin{verbatim}
+\end{lstlisting}
+\begin{lstlisting}[caption=RSA encryption]
 /**
    A class that demonstrates how RSA encryption can be used to encrypt
    RSA encrypted information to an RSADecrypter client
@@ -664,8 +664,8 @@ public class RSAEncrypter
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
-\begin{figure*}\begin{program}\begin{verbatim}
+\end{lstlisting}
+\begin{lstlisting}[caption=RSA encryption in C\#]
 /*
    A C# class that demonstrates how RSA encryption can be used to
    obtain RSA encrypted information from an RSAEncrypter server.
@@ -769,8 +769,8 @@ public class RSADecrypter
       decrypter.ObtainBytes();
    }
 }
-\end{verbatim}\end{program}\end{figure*}
-\begin{figure*}\begin{program}\begin{verbatim}
+\end{lstlisting}
+\begin{lstlisting}[caption=RSA encryption in .NET]
 /*
    A C# class that demonstrates how RSA encryption can be used in .NET
    to encrypt RSA encrypted information to an RSADecrypter client.
@@ -824,7 +824,7 @@ public class RSAEncrypter
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 
 \begin{exercise}[Implementation of RSA]
@@ -1037,11 +1037,12 @@ of another process it can use the following steps:
     including a timestamp with the request.
     The public-key authority responds with a message encrypted using its private key,
     including the public key for the receiver and the original request with the timestamp.
-    \columnbreak Once the response has been decrypted by the initiator using the public key of the authority
+    Once the response has been decrypted by the initiator using the public key of the authority
     it is assured that the message was encrypted by the authority and that
-    its original request was received by the authority untampered.
- \begin{center}
- 	 \begin{pspicture}[shift=-1.5](0,0)(5,1.5)
+    its original request was received by the authority untampered.\end{multicols}
+ 
+ 	\begin{figure*}	\begin{center}
+ 	 \begin{pspicture}[h](0,0)(5,1.5)
     \rput(0.8,0.25){\ovalnode{I}{\makebox[10mm]{\scriptsize Initiator}}}
     \rput(2.5,1.25){\ovalnode{K}{\makebox[10mm]{\scriptsize Authority}}}
     \rput(4.2,0.25){\ovalnode{R}{\makebox[10mm]{\scriptsize Receiver}}}
@@ -1049,9 +1050,10 @@ of another process it can use the following steps:
     \nccurve[arrows=->,linecolor=red,linewidth=1mm,angleA=255,angleB=15]{K}{I}
     \rput(0.75,1.2){\tiny\begin{tabular}{c}public key\\encrypted\\request\end{tabular}}
     \rput(2.75,0.3){\tiny\begin{tabular}{c}private key\\encrypted\\reply\end{tabular}}
-  \end{pspicture}
-\end{center}
-\end{multicols}
+  \end{pspicture}\end{center}
+\end{figure*}
+
+
 \begin{multicols}{2}
   \item
     The initiator then uses the public key for the receiver to encrypt an identifier
@@ -1376,7 +1378,6 @@ advantageous) then the field $GF(2^m)$ where $m\geq1$ is chosen and
 an elliptic curve $y^2+xy=x^3+ax^2+b$ with $b\neq0$ is used
 (called a \defn{binary curve}).
 
-\clearpage
 \begin{multicols}{2}
 As an example, the elliptic curve $y^2=x^3-x+1$ over the field $\mathbb{Z}_7$
 has $11$ solutions, the points $(0,1)$, $(0,6)$, $(1,1)$, $(1,6)$,
@@ -1503,112 +1504,112 @@ quickly becoming infeasible for moderate values of $p$.
 	or the Java ME Bouncy Castle lightweight example\\ \begin{code}ECKeyExchangeMIDlet\end{code}
 	to prepare a mobile application that uses SMS communication to perform an ECC key exchange.
 \end{exercise}
-\begin{figure*}\begin{program}\begin{verbatim}
-		/**
-		* Android Activity that demonstrates ECC key exchange using the fixed
-		* elliptic curve secp256r1
-		* @author Andrew Ensor
-		*/
-		package aut.hss;
-		...
-		import java.math.BigInteger;
-		import java.security.InvalidAlgorithmParameterException;
-		import java.security.InvalidKeyException;
-		import java.security.KeyPair;
-		import java.security.KeyPairGenerator;
-		import java.security.NoSuchAlgorithmException;
-		import java.security.interfaces.ECPrivateKey;
-		import java.security.interfaces.ECPublicKey;
-		import java.security.spec.ECField;
-		import java.security.spec.ECFieldFp;
-		import java.security.spec.ECParameterSpec;
-		import java.security.spec.ECPoint;
-		import java.security.spec.EllipticCurve;
-		import java.util.Arrays;
-		import javax.crypto.KeyAgreement;
-		...
-		public class AndroidECKeyExchangeActivity extends Activity implements
-		OnClickListener
-		{
-		private Button exchangeButton;
-		private TextView statusTextView;
-		// well-known elliptic curve secp256r1 (256 bit prime, 32 byte)
-		private static final BigInteger P = new BigInteger
-		("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
-		private static final BigInteger A = new BigInteger
-		("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
-		private static final BigInteger B = new BigInteger
-		("5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3...", 16);
-		private static final BigInteger GX = new BigInteger
-		("6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13...", 16);
-		private static final BigInteger GY = new BigInteger
-		("4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB64...", 16);
-		private static final BigInteger N = new BigInteger
-		("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9C...", 16);
-		private static final int H = 1; // cofactor
-		
-		// inner class that represents one end of a key exchange
-		private static class KeyExchangeProcess
-		{
-		private ECPublicKey publicKey;
-		private ECPrivateKey privateKey;
-		\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
+
+\begin{lstlisting}[caption=ECC key exchange]
+/**
+* Android Activity that demonstrates ECC key exchange using the fixed elliptic curve secp256r1
+* @author Andrew Ensor
+*/
+package aut.hss;
+...
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
+import java.util.Arrays;
+import javax.crypto.KeyAgreement;
+...
+public class AndroidECKeyExchangeActivity extends Activity implements
+OnClickListener
+{
+private Button exchangeButton;
+private TextView statusTextView;
+// well-known elliptic curve secp256r1 (256 bit prime, 32 byte)
+private static final BigInteger P = new BigInteger
+("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+private static final BigInteger A = new BigInteger
+("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFF...", 16);
+private static final BigInteger B = new BigInteger
+("5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3...", 16);
+private static final BigInteger GX = new BigInteger
+("6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13...", 16);
+private static final BigInteger GY = new BigInteger
+("4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB64...", 16);
+private static final BigInteger N = new BigInteger
+("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9C...", 16);
+private static final int H = 1; // cofactor
+
+// inner class that represents one end of a key exchange
+private static class KeyExchangeProcess
+{
+private ECPublicKey publicKey;
+private ECPrivateKey privateKey;
+\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
 \begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
-		public KeyExchangeProcess()
-		{  // create the elliptic curve
-		ECField field = new ECFieldFp(P);
-		EllipticCurve curve = new EllipticCurve(field, A, B);
-		// use existing precalculated values of G and N
-		ECPoint G = new ECPoint(GX, GY);
-		ECParameterSpec ecSpec = new ECParameterSpec(curve, G, N, H);
-		// create public and private keys
-		try
-		{  KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-		kpg.initialize(ecSpec); // size of key in bits
-		System.out.println("About to generate a key pair");
-		KeyPair keyPair = kpg.generateKeyPair();
-		System.out.println("Finished generating a key pair");
-		privateKey = (ECPrivateKey)keyPair.getPrivate();
-		publicKey = (ECPublicKey)keyPair.getPublic();
-		
-		}
-		catch (NoSuchAlgorithmException e)
-		{  System.err.println
-		("Encryption algorithm not available: " + e);
-		}
-		catch (InvalidAlgorithmParameterException e)
-		{  System.err.println
-		("Invalid Parameter in Encryption algorithm: " + e);
-		}
-		}
-		
-		public ECPublicKey getPublicKey()
-		{  return publicKey;
-		}
-		
-		public byte[] calculateSecretKey(ECPublicKey otherPublicKey)
-		{  // generate secret key using Elliptic Curve Diffie-Hellman
-		byte[] key = null;
-		try
-		{  KeyAgreement ka = KeyAgreement.getInstance("ECDH");
-		ka.init(privateKey); // initialize with own private key
-		ka.doPhase(otherPublicKey, true);
-		key = ka.generateSecret();
-		}
-		catch (NoSuchAlgorithmException e)
-		{  System.err.println
-		("Key agreement algorithm not available: " + e);
-		}
-		catch (InvalidKeyException e)
-		{  System.err.println
-		("Invalid key in key agreement algorithm: " + e);
-		}
-		return key;
-		}
-		}
-		}
-		\end{verbatim}\end{program}\end{figure*}
-\begin{figure*}\begin{program}\begin{verbatim}
+public KeyExchangeProcess()
+{  // create the elliptic curve
+ECField field = new ECFieldFp(P);
+EllipticCurve curve = new EllipticCurve(field, A, B);
+// use existing precalculated values of G and N
+ECPoint G = new ECPoint(GX, GY);
+ECParameterSpec ecSpec = new ECParameterSpec(curve, G, N, H);
+// create public and private keys
+try
+{  KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+kpg.initialize(ecSpec); // size of key in bits
+System.out.println("About to generate a key pair");
+KeyPair keyPair = kpg.generateKeyPair();
+System.out.println("Finished generating a key pair");
+privateKey = (ECPrivateKey)keyPair.getPrivate();
+publicKey = (ECPublicKey)keyPair.getPublic();
+
+}
+catch (NoSuchAlgorithmException e)
+{  System.err.println
+("Encryption algorithm not available: " + e);
+}
+catch (InvalidAlgorithmParameterException e)
+{  System.err.println
+("Invalid Parameter in Encryption algorithm: " + e);
+}
+}
+
+public ECPublicKey getPublicKey()
+{  return publicKey;
+}
+
+public byte[] calculateSecretKey(ECPublicKey otherPublicKey)
+{  // generate secret key using Elliptic Curve Diffie-Hellman
+byte[] key = null;
+try
+{  KeyAgreement ka = KeyAgreement.getInstance("ECDH");
+ka.init(privateKey); // initialize with own private key
+ka.doPhase(otherPublicKey, true);
+key = ka.generateSecret();
+}
+catch (NoSuchAlgorithmException e)
+{  System.err.println
+("Key agreement algorithm not available: " + e);
+}
+catch (InvalidKeyException e)
+{  System.err.println
+("Invalid key in key agreement algorithm: " + e);
+}
+return key;
+}
+}
+}
+\end{lstlisting}
+\begin{lstlisting}[caption=ECC key exchange via the Bouncy Castle]
 /**
    A MIDlet that demonstrates ECC key exchange via the Bouncy Castle
    lightweight API
@@ -1660,8 +1661,7 @@ public class ECKeyExchangeMIDlet extends MIDlet
          }
       }
    }
-\end{verbatim}\hfill \emph{cont-}\end{program}\end{figure*}%
-\begin{figure*}\begin{program}\emph{-cont}\begin{verbatim}
+
    // inner class that represents one end of a key exchange
    private class KeyExchangeProcess
    {
@@ -1702,6 +1702,6 @@ public class ECKeyExchangeMIDlet extends MIDlet
       }
    }
 }
-\end{verbatim}\end{program}\end{figure*}
+\end{lstlisting}
 
 

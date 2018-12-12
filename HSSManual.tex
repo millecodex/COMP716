@@ -6,7 +6,7 @@
 %                         LATEX SOURCE FILES                           %
 %                                                                      %
 % Written by Andrew Ensor, 2006.                                       %
-% Last updated 04 December 2018 by Jeff Nijsse                         %
+% Last updated 12 December 2018 by Jeff Nijsse                         %
 %                                                                      %
 % This project is on GitHub, find it and download the source files at: %
 % <https://github.com/millecodex/COMP716/>                             % 
@@ -26,17 +26,54 @@
 % PDF copy for download is single-sided with active coloured URLs
 % i.e: \documentclass[a4paper,10pt,oneside]{book}
 \documentclass[a4paper,oneside]{book}
-\usepackage{pstricks,pst-coil,pst-plot,pst-grad,pst-node,pst-text}
 \usepackage{auto-pst-pdf}
-\usepackage{tikz}
 \usepackage{amssymb,amsmath,graphicx,xcolor,ifthen,clrscode}
 \usepackage{multicol,parskip,booktabs}
-
+%
+% handling to use pdflatex compiler with both pgfplots and pstricks
+\ifpdf
+\usepackage{tikz,pgfplots}
+\else
+\usepackage{pstricks}%,pst-coil,pst-grad,pst-node,pst-text}
+\usepackage{pst-plot,pst-coil,pst-grad,pst-node,pst-text}
+\fi
+%
+% update to use minted in future
+\usepackage{listings}
+\definecolor{pblue}{rgb}{0.13,0.13,1}
+\definecolor{pgreen}{rgb}{0,0.5,0}
+\definecolor{pred}{rgb}{0.9,0,0}
+\definecolor{pgrey}{rgb}{0.46,0.45,0.48}
+\lstset{language=Java,
+	showspaces=false,
+	showtabs=false,
+	columns=fullflexible,
+	backgroundcolor=\color{gray!10},
+	frame=b,
+	breaklines=true,
+	showstringspaces=false,
+	breakatwhitespace=true,
+	commentstyle=\color{pgreen},
+	keywordstyle=\color{pblue},
+	stringstyle=\color{pred},
+	basicstyle=\small\ttfamily,
+}
+% captions for the code blocks
+\usepackage{caption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray!50}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1#2#3}}}
+\captionsetup[lstlisting]{
+	format=listing,
+	labelformat=empty,
+	textfont={sc}
+}
 % for one-sided printing
 \usepackage[inner=3.27cm,outer=3.27cm,bottom=2.54cm,top=2.54cm]{geometry}
 % for two-sided printing
 %\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
 %\usepackage[hidelinks]{hyperref} makes all links black for printing
+
+\graphicspath{{./graphics/}} %
 \usepackage{hyperref}
 \hypersetup{
 	colorlinks,
@@ -44,13 +81,11 @@
 	citecolor={blue!50!black},
 	urlcolor={blue!50!black}
 }
-\graphicspath{{./graphics/}} %
+
 \begin{document}
 \setlength{\parskip}{1.5mm}
-  \newcommand{\url}[1]{\texttt{#1}\/}
   \newcommand{\type}[1]{\texttt{#1}\/}
   \newcommand{\bsl}{\ensuremath{\backslash}}
-%  \newcommand{\tag}[1]{\type{<#1>}}
   \newcommand{\suggestbreak}{\linebreak[0]}
   \newcommand{\reading}[1]{\textbf{Reading: {#1}}}
   \newcommand{\defn}[1]{\textit{#1}}
@@ -59,11 +94,6 @@
     \psframe(0,0)(0.5,0.25) \psline(0,0.25)(0.25,0.15)(0.5,0.25) \end{pspicture}}
   \newcommand{\obj}[1]{\psframebox[framearc=0.25]{\small #1}}
   \newcommand{\var}[1]{\pscirclebox{\footnotesize #1}}
-  \newcommand{\cls}[1]{\psshadowbox{\small\begin{code}#1\end{code}}}
-  \newsavebox{\saveprog}
-  \newenvironment{program}{\noindent\begin{lrbox}{\saveprog}%
-    \begin{minipage}[b]{11.75cm}\small}
-    {\end{minipage}\end{lrbox}\psshadowbox{\usebox{\saveprog}}}
   \newcommand{\dbind}{\hspace{1.0em}} % indent used for first lines in programs
   \newcommand{\trind}{\mbox{}\hspace{1.5em}} % indent used for lines in programs
   \newcommand{\nudgedown}[1]{\vspace{#1mm}}
@@ -79,11 +109,9 @@
     \multicolumn{1}{|c|}{\textbf{\textsf{#1}}}\\\hline}%
     {\\\hline\end{tabular}\end{code}}
   \newenvironment{objuml}[1]{\begin{uml}{\underline{#1}\rule[-2mm]{0mm}{0mm}}}{\end{uml}}
-
   \newenvironment{theorem}[1]{\vspace{2mm}\noindent\textsc{#1}: }{\vspace{2mm}}
   \newtheorem{exercise}{Exercise}[chapter]
   \definecolor{lightred}{rgb}{1,0.5,0.5}
-
   % modify the clrscode package
   \renewcommand{\Do}{\textbf{do}\addtocounter{indent}{1}}
   \renewcommand{\Then}{\textbf{then}\addtocounter{indent}{1}}
@@ -130,17 +158,17 @@
  Version 1.0 by Andrew Ensor, 2006.
  
  
-    %\include{CourseInformation}
-    %\include{Timetable}
+    \include{CourseInformation}
+    \include{Timetable}
     \hypersetup{linkcolor={black}}
     \tableofcontents
 
   \mainmatter
-%    \include{SymmetricCiphers}
-%    \include{PublicKeyEncryption}
-%    \include{Authentication}
-%    \include{NetworkSecurity}
-%    \include{SystemSecurity}
+    \include{SymmetricCiphers}
+    \include{PublicKeyEncryption}
+    \include{Authentication}
+    \include{NetworkSecurity}
+    \include{SystemSecurity}
 	\include{Blockchain}
 
   \appendix

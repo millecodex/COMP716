@@ -3,7 +3,7 @@
 % for the manual:
 %   Highly Secure Systems
 % Written by Andrew Ensor
-% Last updated 5 June 2006.
+% Last updated February 02, 2019.
 
 \chapter{Authentication}
 
@@ -12,9 +12,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Message Authentication}\label{Se:MessageAuthentication}
-
-\reading{pp318-344}
-
 Symmetric and public-key encryption both provide confidentiality of messages,
 ensuring that only the intended recipient can decrypt the ciphertext and
 obtain the original plaintext. However, unless the recipient knows the format of the
@@ -245,9 +242,6 @@ Prepare an implementation of the Data Authentication Code using a DES cipher.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Hash and MAC Algorithms}
-
-\reading{pp352-374}
-
 The \defn{Message Digest 5} (MD5) algorithm has been a popular cryptographic hash function
 that produces a $128$-bit hash code for a message.
 It processes a variable length message by breaking it into $512$-bit blocks and using the
@@ -570,9 +564,6 @@ byte[] hashCode = mac.doFinal(message);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Digital Signatures}\label{Se:DigitalSignatures}
-
-\reading{pp378-382,390-393,478-479}
-
 A \defn{digital signature} is an encrypted sequence of bytes appended to a message
 that can be used to verify the sender of the message, when the signature was created,
 and authenticate the contents of the message.
@@ -928,9 +919,6 @@ Prepare a program that performs Base 64 encoding and decoding.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Certificates and Key Storage}\label{Se:CertificatesKeyStorage}
-
-\reading{pp419-430}
-
 A \defn{(public-key) certificate} is a document that contains an identifier for a process
 and its public key, together with a digital signature of the information
 prepared by a signer that is trusted to ensure the authenticity of

@@ -12,9 +12,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Authentication Services}\label{Se:AuthenticationServices}
-
-\reading{pp401-419}
-
 User authentication is vital to the security of a distributed system,
 access to some servers in the system might need to be controlled,
 operations such as printing might need to be billed to the correct user,
@@ -383,7 +380,7 @@ the \begin{code}LoginModule\end{code} can all be specified in a configuration fi
 from which a client application can choose which configuration to use
 for authentication.
 
-\begin{program}\begin{verbatim}
+\begin{lstlisting}[caption=JAAS login configuration]
 /**
    JAASExample.config login configuration file with some
    configurations for a hypothetical distributed system
@@ -401,7 +398,7 @@ BiometricLogin
 {  com.csp.jaasmodule.BioLoginModule sufficient;
    com.csp.jaasmodule.JavaCardLoginModule required matchOnCard="true";
 };
-\end{verbatim}\end{program}
+\end{lstlisting}
 
 \noindent
 The name of this configuration file can be specified either when the
@@ -667,9 +664,6 @@ public class JAASExampleCallbackHandler implements CallbackHandler
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Electronic Mail Security}
-
-\reading{pp438-474}
-
 When a user sends an email from a email client program
 the message is first communicated via the \defn{Simple Mail Transfer Protocol} (SMTP)
 to a mail server on the network
@@ -1048,7 +1042,6 @@ a digital signature as a MIME part to an email message.
 %%%%% Web Security                                                                  %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Web Security}\label{Se:WebSecurity}
-\reading{pp484-498,528-549}
 \begin{multicols}{2}
 Using an authentication service such as Kerberos, or secure email via PGP or S/MIME,
 presumes that the communication in a system is insecure, and so security is

@@ -3,7 +3,7 @@
 % for the manual:
 %   Highly Secure Systems
 % Written by Andrew Ensor
-% Last updated 5 June 2006.
+% Last updated 12 December 2018.
 
 \chapter{Public-Key Encryption}
 
@@ -12,9 +12,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Modular Arithmetic}
-
-\reading{pp235-253}
-
 Besides its importance for AES, the modular arithmetic operations in the ring
 $\mathbb{Z}_n$ have an important role in public-key encryption.
 Calculating an arithmetic expression modulo $n$ can be simplified by taking the modulo of
@@ -285,9 +282,6 @@ $a=f^{-1}(3,7)=(3\cdot36+7\cdot25)\mbox{ mod }60=43$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{RSA Algorithm}\label{Se:RSAAlgorithm}
-
-\reading{pp258-280}
-
 The concept of public-key cryptography was introduced as a way to
 distribute secret keys without resorting to physical distribution,
 and as a way to authenticate the sender of a message.
@@ -837,9 +831,6 @@ Prepare a program that provides an implementation of the RSA public-key block ci
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Key Exchange}
-
-\reading{pp290-301}
-
 The performance of public-key encryption algorithms
 can be up to 1000 times slower than symmetric encryption,
 which limits their suitability to the exchange of
@@ -1179,9 +1170,6 @@ TCP connection to exchange a secret key.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Elliptic Curve Cryptography}\label{Se:EllipticCurveCryptography}
-
-\reading{pp301-313}
-
 Due to recent progress in calculating prime factorizations RSA public keys
 need to be at least 1024 bits to provide adequate security.
 \defn{Elliptic Curve Cryptography} (ECC) is a promising alternative

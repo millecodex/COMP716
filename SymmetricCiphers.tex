@@ -3,7 +3,7 @@
 % for the manual:
 %   Highly Secure Systems
 % Written by Andrew Ensor
-% Last updated 4 December 2018 by Jeff Nijsse
+% Last updated 12 December 2018 by Jeff Nijsse
 
 \chapter{Symmetric Ciphers}
 
@@ -12,8 +12,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Classical Encryption Techniques}
-
-\reading{pp29-54}
 
 An \defn{encryption} algorithm is an algorithm which takes a message,
 called \defn{plaintext}, and converts it into a coded message, called
@@ -302,8 +300,6 @@ to store the plaintext bit by bit.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Data Encryption Standard}\label{Se:DataEncryptionStandard}
-
-\reading{pp63-89, 181-187}
 
 Contrary to some classical encryption techniques, usually no attempt is made to
 keep modern cryptography algorithms secret, most are widely known and so
@@ -729,8 +725,6 @@ Test with an image that has a uniform background.
 
 \section{Finite Fields}
 
-\reading{pp96-129}
-
 The set $\left\{0, 1, 2, \dots, n-1\right\}$ of the first $n$ non-negative
 integers is usually denoted by $\mathbb{Z}_n$ and plays an interesting role in
 cryptography. Since adding together two integers each less than $n$ might result in
@@ -1030,8 +1024,6 @@ by $q(x)=x^8+x^4+x^3+x+1$ can be found using long division.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Advanced Encryption Standard}\label{Se:AdvancedEncryptionStandard}
-
-\reading{pp135-160}
 
 As computing power increased the DES cipher with a key length of only 56 bits
 became more and more vulnerable to a brute-force attack,
@@ -1392,8 +1384,6 @@ time versus length.
 
 \section{Other Symmetric Ciphers}\label{Se:OtherSymmetricCiphers}
 
-\reading{pp175-180,189-194}
-
 The DES cipher is gradually being phased out and replaced by more secure ciphers
 such as AES with a longer key and so less susceptible to brute-force attacks.
 However, AES is a newer and completely different algorithm which has
@@ -1743,8 +1733,6 @@ repeatedly add $256$ to \begin{code}x\end{code} to ensure that it is not negativ
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Secret Key Distribution}\label{Se:SecretKeyDistribution}
-
-\reading{pp200-227}
 
 For a distributed computer system there are two common alternative approaches
 for encrypting messages to ensure their confidentiality in the network:

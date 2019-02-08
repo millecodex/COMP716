@@ -25,7 +25,7 @@
 % i.e: \documentclass[a4paper,10pt,twoside]{book}
 % PDF copy for download is single-sided with active coloured URLs
 % i.e: \documentclass[a4paper,10pt,oneside]{book}
-\documentclass[a4paper,oneside]{book}
+\documentclass[a4paper,twoside]{book}
 \usepackage{auto-pst-pdf}
 \usepackage{amssymb,amsmath,graphicx,xcolor,ifthen,clrscode}
 \usepackage{multicol,parskip,booktabs}
@@ -68,9 +68,9 @@
 	textfont={sc}
 }
 % for one-sided printing
-\usepackage[inner=3.27cm,outer=3.27cm,bottom=2.54cm,top=2.54cm]{geometry}
+%\usepackage[inner=3.27cm,outer=3.27cm,bottom=2.54cm,top=2.54cm]{geometry}
 % for two-sided printing
-%\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
+\usepackage[inner=2.54cm,outer=4cm,bottom=2.54cm,top=2.54cm]{geometry}
 %\usepackage[hidelinks]{hyperref} makes all links black for printing
 
 \graphicspath{{./graphics/}} %
@@ -158,8 +158,8 @@
  Version 1.0 by Andrew Ensor, 2006.
  
  
-    \include{CourseInformation}
-    \include{Timetable}
+   % \include{CourseInformation}
+   % \include{Timetable}
     \hypersetup{linkcolor={black}}
     \tableofcontents
 

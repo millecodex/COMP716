@@ -1,6 +1,6 @@
 # COMP716
-## COMP716 - Highly Secure Systems Course Manual at\
-## AUT (Auckland University of Technology)\
+## COMP716 - Highly Secure Systems Course Manual at
+## AUT (Auckland University of Technology)
 ***
 This version (3.0) by Jeff Nijsse, 2018\
 <jeff.nijsse@aut.ac.nz>\

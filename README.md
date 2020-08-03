@@ -18,3 +18,5 @@ The pdf file [HSSManual SingleSided.pdf](https://github.com/millecodex/COMP716/b
 6. Blockchain & Cryptocurrency
 
 The lecture notes are presently maintained on [Blackboard](https://blackboard.aut.ac.nz/). These may be posted to github in the future.
+***
+Last updated January 2019
